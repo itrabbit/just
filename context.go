@@ -1,8 +1,10 @@
 package just
 
 import (
+	"net"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // Context - класс контекста данных запроса / ответа
@@ -176,4 +178,51 @@ func (c *Context) GetQueryArray(key string) ([]string, bool) {
 		return values, true
 	}
 	return []string{}, false
+}
+
+/**
+ * Методы для работы с данными запроса
+ */
+
+func (c *Context) ClientIP(forwarded bool) string {
+	if forwarded {
+		clientIP := strings.TrimSpace(c.GetRequestHeader("X-Real-Ip"))
+		if len(clientIP) > 0 {
+			return clientIP
+		}
+		clientIP = c.GetRequestHeader("X-Forwarded-For")
+		if index := strings.IndexByte(clientIP, ','); index >= 0 {
+			clientIP = clientIP[0:index]
+		}
+		clientIP = strings.TrimSpace(clientIP)
+		if len(clientIP) > 0 {
+			return clientIP
+		}
+	}
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request().RemoteAddr)); err == nil {
+		return ip
+	}
+	return ""
+}
+
+func (c *Context) UserAgent() string {
+	return c.GetRequestHeader("User-Agent")
+}
+
+func (c *Context) ContentType() string {
+	contentType := c.GetRequestHeader("Content-Type")
+	for i, ch := range contentType {
+		if ch == ' ' || ch == ';' {
+			contentType = strings.TrimSpace(contentType[:i])
+			break
+		}
+	}
+	return contentType
+}
+
+func (c *Context) GetRequestHeader(key string) string {
+	if values, _ := c.Request().Header[key]; len(values) > 0 {
+		return values[0]
+	}
+	return ""
 }

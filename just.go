@@ -48,11 +48,20 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 
 	// Выполняем handlers из роутеров
 	response := app.handleRouter(&app.Router, httpMethod, path, context)
+
+	// Отправляем response клиенту
 	if response != nil {
 		w.WriteHeader(response.GetStatus())
+		if headers := response.GetHeaders(); len(headers) > 0 {
+			for key, value := range headers {
+				w.Header().Set(key, value)
+			}
+		}
 		w.Write(response.GetData())
 		return
 	}
+	// Если ничего так и нет, выводим 404 ошибку
+
 }
 
 // Application::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст

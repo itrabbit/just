@@ -3,6 +3,7 @@ package just
 import (
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -11,7 +12,7 @@ import (
 type Context struct {
 	// Приватные параметры
 	app         *Application      // Приложение
-	request     *http.Request     // HTTP запрос
+	Request     *http.Request     // HTTP запрос
 	routeInfo   IRouteInfo        // Данные текущего роута
 	routeParams map[string]string // Параметры роутинга
 	handleIndex int               // Индекс текущего обработчика
@@ -22,7 +23,7 @@ type Context struct {
 
 // Context::reset - сбрасываем контекст
 func (c *Context) reset(req *http.Request) *Context {
-	c.request, c.routeInfo, c.routeParams, c.handleIndex = req, nil, nil, -1
+	c.Request, c.routeInfo, c.routeParams, c.handleIndex = req, nil, nil, -1
 	c.Meta = nil
 	return c
 }
@@ -40,14 +41,9 @@ func (c *Context) RouteBasePath() string {
 	return ""
 }
 
-// Context::Request - получаем данные запроса
-func (c *Context) Request() *http.Request {
-	return c.request
-}
-
 // Context::IsValid - валидация контекста
 func (c *Context) IsValid() bool {
-	return c.request != nil
+	return c.Request != nil
 }
 
 // Context::Next - переходим к выпонение handler
@@ -148,49 +144,102 @@ func (c *Context) GetDef(key string, def interface{}) interface{} {
  * Методы для работы с условиями Query Url
  */
 
-func (c *Context) Query(key string) string {
-	value, _ := c.GetQuery(key)
-	return value
+func (c *Context) Query(key string) (string, bool) {
+	if values, ok := c.QueryArray(key); ok && len(values) > 0 {
+		return values[0], true
+	}
+	return "", false
 }
 
 func (c *Context) QueryDef(key, def string) string {
-	if value, ok := c.GetQuery(key); ok {
+	if value, ok := c.Query(key); ok {
 		return value
 	}
 	return def
 }
 
-func (c *Context) GetQuery(key string) (string, bool) {
-	if values, ok := c.GetQueryArray(key); ok {
-		return values[0], ok
+func (c *Context) QueryArrayDef(key string, def []string) []string {
+	if values, ok := c.QueryArray(key); ok {
+		return values
 	}
-	return "", false
+	return def
 }
 
-func (c *Context) QueryArray(key string) []string {
-	values, _ := c.GetQueryArray(key)
-	return values
-}
-
-func (c *Context) GetQueryArray(key string) ([]string, bool) {
-	req := c.Request()
-	if values, ok := req.URL.Query()[key]; ok && len(values) > 0 {
+func (c *Context) QueryArray(key string) ([]string, bool) {
+	if values, ok := c.Request.URL.Query()[key]; ok && len(values) > 0 {
 		return values, true
 	}
 	return []string{}, false
 }
 
 /**
+ * Методы для работы с данными в Body / POST
+ */
+
+func (c *Context) PostForm(key string) (string, bool) {
+	if values, ok := c.PostFormArray(key); ok {
+		return values[0], ok
+	}
+	return "", false
+}
+
+func (c *Context) PostFormDef(key, def string) string {
+	if value, ok := c.PostForm(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) PostFormArray(key string) ([]string, bool) {
+	c.Request.ParseForm()
+	c.Request.ParseMultipartForm(32 << 20) // 32 MB
+	c.ResetBodyReaderPosition()
+
+	if values := c.Request.PostForm[key]; len(values) > 0 {
+		return values, true
+	}
+	if c.Request.MultipartForm != nil && c.Request.MultipartForm.File != nil {
+		if values := c.Request.MultipartForm.Value[key]; len(values) > 0 {
+			return values, true
+		}
+	}
+	return []string{}, false
+}
+
+func (c *Context) PostFormArrayDef(key string, def []string) []string {
+	if values, ok := c.PostFormArray(key); ok {
+		return values
+	}
+	return def
+}
+
+/**
  * Методы для работы с данными запроса
  */
 
+func (c *Context) Cookie(name string) (string, error) {
+	cookie, err := c.Request.Cookie(name)
+	if err != nil {
+		return "", err
+	}
+	val, _ := url.QueryUnescape(cookie.Value)
+	return val, nil
+}
+
+func (c *Context) CookieDef(name string, def string) string {
+	if cookie, err := c.Cookie(name); err == nil {
+		return cookie
+	}
+	return def
+}
+
 func (c *Context) ClientIP(forwarded bool) string {
 	if forwarded {
-		clientIP := strings.TrimSpace(c.GetRequestHeader("X-Real-Ip"))
+		clientIP := strings.TrimSpace(c.RequestHeader("X-Real-Ip"))
 		if len(clientIP) > 0 {
 			return clientIP
 		}
-		clientIP = c.GetRequestHeader("X-Forwarded-For")
+		clientIP = c.RequestHeader("X-Forwarded-For")
 		if index := strings.IndexByte(clientIP, ','); index >= 0 {
 			clientIP = clientIP[0:index]
 		}
@@ -199,18 +248,18 @@ func (c *Context) ClientIP(forwarded bool) string {
 			return clientIP
 		}
 	}
-	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request().RemoteAddr)); err == nil {
+	if ip, _, err := net.SplitHostPort(strings.TrimSpace(c.Request.RemoteAddr)); err == nil {
 		return ip
 	}
 	return ""
 }
 
 func (c *Context) UserAgent() string {
-	return c.GetRequestHeader("User-Agent")
+	return c.RequestHeader("User-Agent")
 }
 
 func (c *Context) ContentType() string {
-	contentType := c.GetRequestHeader("Content-Type")
+	contentType := c.RequestHeader("Content-Type")
 	for i, ch := range contentType {
 		if ch == ' ' || ch == ';' {
 			contentType = strings.TrimSpace(contentType[:i])
@@ -220,9 +269,14 @@ func (c *Context) ContentType() string {
 	return contentType
 }
 
-func (c *Context) GetRequestHeader(key string) string {
-	if values, _ := c.Request().Header[key]; len(values) > 0 {
+func (c *Context) RequestHeader(key string) string {
+	if values, _ := c.Request.Header[key]; len(values) > 0 {
 		return values[0]
 	}
 	return ""
+}
+
+func (c *Context) ResetBodyReaderPosition() error {
+	_, err := topSeekReader(c.Request.Body, true)
+	return err
 }

@@ -1,7 +1,6 @@
 package just
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -23,13 +22,12 @@ type Application struct {
 // Application::ServeHTTP - HTTP Handler
 func (app *Application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Усли поступил несуществующий запрос - выходим
-	if req == nil {
+	if req == nil || w == nil {
 		return
 	}
 	// Берем контекст из пула
-	context := app.pool.Get().(*Context)
-	// Сбрасываем контекст
-	context.reset(req)
+	context := app.pool.Get().(*Context).reset()
+	context.Request, context.IsFrozenRequestBody = req, true
 	// Передаем контекст в обработчик запросов для заполнения ответа
 	app.handleHttpRequest(w, context)
 	// Складываем контекст в пул
@@ -41,10 +39,7 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 	if !context.IsValid() {
 		return
 	}
-	httpMethod, path := context.Request().Method, context.Request().URL.Path
-
-	// Проходимся по пути и обходим все связанные группы роутинга
-	fmt.Println(httpMethod, path)
+	httpMethod, path := context.Request.Method, context.Request.URL.Path
 
 	// Выполняем handlers из роутеров
 	response := app.handleRouter(&app.Router, httpMethod, path, context)

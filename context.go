@@ -12,19 +12,19 @@ import (
 type Context struct {
 	// Приватные параметры
 	app         *Application      // Приложение
-	Request     *http.Request     // HTTP запрос
 	routeInfo   IRouteInfo        // Данные текущего роута
 	routeParams map[string]string // Параметры роутинга
 	handleIndex int               // Индекс текущего обработчика
 
 	// Открытые параметры
-	Meta map[string]interface{} // Метаданные
+	Meta                map[string]interface{} // Метаданные
+	Request             *http.Request          // HTTP запрос
+	IsFrozenRequestBody bool                   // Замороженное тело запроса (default true)
 }
 
 // Context::reset - сбрасываем контекст
-func (c *Context) reset(req *http.Request) *Context {
-	c.Request, c.routeInfo, c.routeParams, c.handleIndex = req, nil, nil, -1
-	c.Meta = nil
+func (c *Context) reset() *Context {
+	c.Request, c.routeInfo, c.routeParams, c.Meta, c.handleIndex = nil, nil, nil, nil, -1
 	return c
 }
 
@@ -67,6 +67,16 @@ func (c *Context) GetParam(name string) (value string, ok bool) {
 	return
 }
 
+// Context::GetBoolParam - получаем bool параметр из роутера
+func (c *Context) GetBoolParam(name string) (value bool, ok bool) {
+	if str, exist := c.GetParam(name); exist {
+		var err error
+		value, err = strconv.ParseBool(strings.ToLower(str))
+		ok = (err == nil)
+	}
+	return
+}
+
 // Context::GetIntParam - получаем int параметр из роутера
 func (c *Context) GetIntParam(name string) (value int64, ok bool) {
 	if str, exist := c.GetParam(name); exist {
@@ -90,6 +100,14 @@ func (c *Context) GetFloatParam(name string) (value float64, ok bool) {
 // Context::GetParamDef - получаем параметр из роутера с учетом значения по умолчанию
 func (c *Context) GetParamDef(name string, def string) string {
 	if value, ok := c.GetParam(name); ok {
+		return value
+	}
+	return def
+}
+
+// Context::GetBoolParamDef - получаем параметр из роутера с учетом значения по умолчанию
+func (c *Context) GetBoolParamDef(name string, def bool) bool {
+	if value, ok := c.GetBoolParam(name); ok {
 		return value
 	}
 	return def
@@ -158,6 +176,54 @@ func (c *Context) QueryDef(key, def string) string {
 	return def
 }
 
+func (c *Context) QueryBool(key string) (bool, bool) {
+	if str, ok := c.Query(key); ok {
+		if b, err := strconv.ParseBool(strings.ToLower(str)); err == nil {
+			return b, true
+		}
+	}
+	return false, false
+}
+
+func (c *Context) QueryBoolDef(key string, def bool) bool {
+	if value, ok := c.QueryBool(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) QueryInt(key string) (int64, bool) {
+	if str, ok := c.Query(key); ok {
+		if i, err := strconv.ParseInt(str, 10, 64); err == nil {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+func (c *Context) QueryIntDef(key string, def int64) int64 {
+	if value, ok := c.QueryInt(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) QueryFloat(key string) (float64, bool) {
+	if str, ok := c.Query(key); ok {
+		if f, err := strconv.ParseFloat(str, 64); err == nil {
+			return f, true
+		}
+	}
+	return 0, false
+}
+
+func (c *Context) QueryFloatDef(key string, def float64) float64 {
+	if value, ok := c.QueryFloat(key); ok {
+		return value
+	}
+	return def
+}
+
 func (c *Context) QueryArrayDef(key string, def []string) []string {
 	if values, ok := c.QueryArray(key); ok {
 		return values
@@ -190,11 +256,60 @@ func (c *Context) PostFormDef(key, def string) string {
 	return def
 }
 
+func (c *Context) PostFormBool(key string) (bool, bool) {
+	if str, ok := c.PostForm(key); ok {
+		if b, err := strconv.ParseBool(str); err == nil {
+			return b, true
+		}
+	}
+	return false, false
+}
+
+func (c *Context) PostFormBoolDef(key string, def bool) bool {
+	if value, ok := c.PostFormBool(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) PostFormInt(key string) (int64, bool) {
+	if str, ok := c.PostForm(key); ok {
+		if i, err := strconv.ParseInt(str, 10, 64); err == nil {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
+func (c *Context) PostFormIntDef(key string, def int64) int64 {
+	if value, ok := c.PostFormInt(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) PostFormFloat(key string) (float64, bool) {
+	if str, ok := c.PostForm(key); ok {
+		if f, err := strconv.ParseFloat(str, 64); err == nil {
+			return f, true
+		}
+	}
+	return 0, false
+}
+
+func (c *Context) PostFormFloatDef(key string, def float64) float64 {
+	if value, ok := c.PostFormFloat(key); ok {
+		return value
+	}
+	return def
+}
+
 func (c *Context) PostFormArray(key string) ([]string, bool) {
 	c.Request.ParseForm()
 	c.Request.ParseMultipartForm(32 << 20) // 32 MB
-	c.ResetBodyReaderPosition()
-
+	if c.IsFrozenRequestBody {
+		c.ResetBodyReaderPosition()
+	}
 	if values := c.Request.PostForm[key]; len(values) > 0 {
 		return values, true
 	}

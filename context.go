@@ -49,8 +49,11 @@ func (c *Context) IsValid() bool {
 // Context::Next - переходим к выпонение handler
 func (c *Context) Next() IResponse {
 	c.handleIndex++
-	if handler := c.routeInfo.HandlerByIndex(c.handleIndex); handler != nil {
-		return handler(c)
+	if handler, ok := c.routeInfo.HandlerByIndex(c.handleIndex); ok {
+		if handler != nil {
+			return handler(c)
+		}
+		return c.Next()
 	}
 	return nil
 }

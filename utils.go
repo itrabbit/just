@@ -2,6 +2,7 @@ package just
 
 import (
 	"bytes"
+	"encoding/xml"
 	"errors"
 	"io"
 	"os"
@@ -9,8 +10,6 @@ import (
 	"reflect"
 	"strings"
 )
-
-type H map[string]interface{}
 
 func topSeekReader(reader io.Reader, nopDetect bool) (int64, error) {
 	if reader != nil {
@@ -45,4 +44,29 @@ func joinPaths(a string, b string) string {
 		return c + "/"
 	}
 	return c
+}
+
+type H map[string]interface{}
+
+func (h H) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	start.Name = xml.Name{
+		Space: "",
+		Local: "data",
+	}
+	if err := e.EncodeToken(start); err != nil {
+		return err
+	}
+	for key, value := range h {
+		elem := xml.StartElement{
+			Name: xml.Name{Space: "", Local: key},
+			Attr: []xml.Attr{},
+		}
+		if err := e.EncodeElement(value, elem); err != nil {
+			return err
+		}
+	}
+	if err := e.EncodeToken(xml.EndElement{Name: start.Name}); err != nil {
+		return err
+	}
+	return nil
 }

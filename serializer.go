@@ -9,7 +9,7 @@ type ISerializer interface {
 }
 
 type ISerializerManager interface {
-	NameDefaultSerializer() string
+	NameDefaultSerializer() (string, bool)
 	SetNameDefaultSerializer(string) ISerializerManager
 	SetSerializer(string, []string, ISerializer) ISerializerManager
 	GetSerializerByName(string) ISerializer
@@ -23,8 +23,13 @@ type serializerManager struct {
 	serializersByContentType map[string]ISerializer
 }
 
-func (m *serializerManager) NameDefaultSerializer() string {
-	return m.nameDefaultSerializer
+func (m *serializerManager) NameDefaultSerializer() (string, bool) {
+	if len(m.nameDefaultSerializer) < 1 && len(m.serializersByName) > 0 {
+		for name, _ := range m.serializersByName {
+			return name, false
+		}
+	}
+	return m.nameDefaultSerializer, true
 }
 
 func (m *serializerManager) SetNameDefaultSerializer(name string) ISerializerManager {

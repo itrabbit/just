@@ -7,11 +7,12 @@ import (
 func main() {
 	app := just.New()
 	app.Group("/v1").
-		Use(func(context *just.Context) just.IResponse {
-			return context.Next()
-		}).
-		GET("/{name}/{id:regexp(\\d+)}", func(context *just.Context) just.IResponse {
-			return &just.Response{201, []byte("Hi " + context.GetParamDef("name", "unknown") + ", id = " + context.GetParamDef("id", "0")), nil}
+		GET("/{name}/{id:regexp(\\d+)}", func(c *just.Context) just.IResponse {
+			return c.ResponseData(
+				"xml", 201, just.H{
+					"name": c.GetParamDef("name", ""),
+					"id":   c.GetIntParamDef("id", 0),
+				})
 		})
 	app.Run("127.0.0.1:8000")
 }

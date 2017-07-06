@@ -74,13 +74,13 @@ func (c *Context) Bind(ptr interface{}) error {
 	return s.Deserialize(b, ptr)
 }
 
-// Context::ResponseBySerializer - создаем ответ с данными через сериализатор
-func (c *Context) ResponseBySerializer(serializer string, status int, v interface{}) IResponse {
-	if s := c.GetSerializer(serializer); s == nil {
+// Context::ResponseData - создаем ответ с данными через сериализатор
+func (c *Context) ResponseData(serializer string, status int, v interface{}) IResponse {
+	if s := c.GetSerializer(serializer); s != nil {
 		if b, err := s.Serialize(v); err == nil {
 			return &Response{
 				Status: status,
-				Bytes: b,
+				Bytes:  b,
 				Headers: map[string]string{
 					"Content-Type": s.DefaultContentType(),
 				},
@@ -88,6 +88,11 @@ func (c *Context) ResponseBySerializer(serializer string, status int, v interfac
 		}
 	}
 	return nil
+}
+
+func (c *Context) ResponseDataDef(status int, v interface{}) IResponse {
+	defName, _ := c.app.serializerManager.NameDefaultSerializer()
+	return c.ResponseData(defName, status, v)
 }
 
 // Context::IsValid - валидация контекста

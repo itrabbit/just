@@ -19,7 +19,7 @@ func (JsonSerializer) DefaultContentType() string {
 
 func (JsonSerializer) Serialize(v interface{}) ([]byte, error) {
 	if IsDebug() {
-		return json.MarshalIndent(v, " ", "")
+		return json.MarshalIndent(v, "", "    ")
 	}
 	return json.Marshal(v)
 }
@@ -38,7 +38,7 @@ func (XmlSerializer) DefaultContentType() string {
 
 func (XmlSerializer) Serialize(v interface{}) ([]byte, error) {
 	if IsDebug() {
-		return xml.MarshalIndent(v, " ", "")
+		return xml.MarshalIndent(v, "", "    ")
 	}
 	return xml.Marshal(v)
 }

@@ -53,12 +53,17 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 
 	// Отправляем response клиенту
 	if response != nil {
-		w.WriteHeader(response.GetStatus())
 		if headers := response.GetHeaders(); len(headers) > 0 {
 			for key, value := range headers {
+				if key == "Content-Type" {
+					if strings.Index(value, ";") < 0 {
+						value = strings.TrimSpace(value) + "; charset=utf-8"
+					}
+				}
 				w.Header().Set(key, value)
 			}
 		}
+		w.WriteHeader(response.GetStatus())
 		w.Write(response.GetData())
 		return
 	}
@@ -126,7 +131,7 @@ func New() *Application {
 	}, &JsonSerializer{}).SetSerializer("xml", []string{
 		"text/xml",
 		"application/xml",
-	}, &JsonSerializer{}).SetSerializer("form", []string{
+	}, &XmlSerializer{}).SetSerializer("form", []string{
 		"multipart/form-data",
 		"application/x-www-form-urlencoded",
 	}, &FormSerializer{}).SetNameDefaultSerializer("json")

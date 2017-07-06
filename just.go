@@ -2,21 +2,28 @@ package just
 
 import (
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 )
 
 const (
-	Version = "v0.0.1"
+	Version      = "v0.0.1"
+	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
-// HandlerFunc - метод обработки запроса или middleware
-type HandlerFunc func(*Context) IResponse
+// Режим отладки
+var debugMutex sync.RWMutex = sync.RWMutex{}
+var debugMode bool = true
 
 // Application - класс приложения
 type Application struct {
 	Router
 	pool sync.Pool
+
+	// Менеджер сериализаторов с поддержкой мультипоточности
+	serializerManager serializerManager
 }
 
 // Application::ServeHTTP - HTTP Handler
@@ -95,6 +102,11 @@ func (app *Application) Run(address string) {
 	http.ListenAndServe(address, app)
 }
 
+// Application::GetSerializerManager - менеджер зериализаторов
+func (app *Application) GetSerializerManager() ISerializerManager {
+	return &app.serializerManager
+}
+
 // New - создаем приложение
 func New() *Application {
 	app := &Application{
@@ -109,5 +121,32 @@ func New() *Application {
 	app.pool.New = func() interface{} {
 		return &Context{app: app}
 	}
+	app.serializerManager.SetSerializer("json", []string{
+		"application/json",
+	}, &JsonSerializer{}).SetSerializer("xml", []string{
+		"text/xml",
+		"application/xml",
+	}, &JsonSerializer{}).SetSerializer("form", []string{
+		"multipart/form-data",
+		"application/x-www-form-urlencoded",
+	}, &FormSerializer{})
 	return app
+}
+
+func SetDebugMode(value bool) {
+	debugMutex.RLock()
+	defer debugMutex.RUnlock()
+	debugMode = value
+}
+
+func IsDebug() bool {
+	debugMutex.Lock()
+	defer debugMutex.Unlock()
+	return debugMode
+}
+
+func init() {
+	if value, err := strconv.ParseBool(os.Getenv(DebugEnvName)); err == nil {
+		SetDebugMode(value)
+	}
 }

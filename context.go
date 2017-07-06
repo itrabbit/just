@@ -1,6 +1,8 @@
 package just
 
 import (
+	"errors"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -34,6 +36,7 @@ func (c *Context) resetRoute(info IRouteInfo, params map[string]string) *Context
 	return c
 }
 
+// Context::RouteBasePath - текущий путь роута
 func (c *Context) RouteBasePath() string {
 	if c.routeInfo != nil {
 		return c.routeInfo.BasePath()
@@ -41,9 +44,39 @@ func (c *Context) RouteBasePath() string {
 	return ""
 }
 
+// Context::GetSerializer - получить сериализатор по имени или типу контента
+func (c *Context) GetSerializer(s string) ISerializer {
+	if strings.Index(s, "/") > 0 {
+		if r := c.app.GetSerializerManager().GetSerializerByContentType(s); r != nil {
+			return r
+		}
+	}
+	return c.app.GetSerializerManager().GetSerializerByName(s)
+}
+
+// Context::Bind - десериализация контента запроса в объект
+func (c *Context) Bind(ptr interface{}) error {
+	if c.Request == nil {
+		return errors.New("Empty request")
+	}
+	if c.Request.Body == nil {
+		return errors.New("Empty request body")
+	}
+	s := c.app.GetSerializerManager().GetSerializerByContentType(c.ContentType())
+	if s == nil {
+		return errors.New("Not find Serializer for " + c.ContentType())
+	}
+	b, err := ioutil.ReadAll(c.Request.Body)
+	defer c.ResetBodyReaderPosition()
+	if err != nil {
+		return err
+	}
+	return s.Deserialize(b, ptr)
+}
+
 // Context::IsValid - валидация контекста
 func (c *Context) IsValid() bool {
-	return c.Request != nil
+	return c.app != nil && c.Request != nil
 }
 
 // Context::Next - переходим к выпонение handler

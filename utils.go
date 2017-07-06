@@ -10,9 +10,7 @@ import (
 	"strings"
 )
 
-type (
-	H map[string]interface{}
-)
+type H map[string]interface{}
 
 func topSeekReader(reader io.Reader, nopDetect bool) (int64, error) {
 	if reader != nil {

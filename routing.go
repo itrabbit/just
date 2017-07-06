@@ -19,47 +19,51 @@ const (
 	patternParamUUID    = "([a-fA-F0-9]{8}-?[a-f0-9]{4}-?[1-5][a-fA-F0-9]{3}-?[89abAB][a-fA-F0-9]{3}-?[a-fA-F0-9]{12})"
 )
 
-type (
-	// IRouter - интерфейс роутера
-	IRouter interface {
-		IRoute
-		Group(string, ...HandlerFunc) IRouter
-	}
-	// IRoute - интерфейс роута
-	IRoute interface {
-		IRouteInfo
+// HandlerFunc - метод обработки запроса или middleware
+type HandlerFunc func(*Context) IResponse
 
-		// Использовать middleware
-		Use(...HandlerFunc) IRoute
+type IRouteInfo interface {
+	BasePath() string
+	Handlers() []HandlerFunc
+	HandlerByIndex(index int) (HandlerFunc, bool)
+}
 
-		// Обработка запросов к приложению сервера
-		Handle(string, string, ...HandlerFunc) IRoute
-		Any(string, ...HandlerFunc) IRoute
-		GET(string, ...HandlerFunc) IRoute
-		POST(string, ...HandlerFunc) IRoute
-		DELETE(string, ...HandlerFunc) IRoute
-		PATCH(string, ...HandlerFunc) IRoute
-		PUT(string, ...HandlerFunc) IRoute
-		OPTIONS(string, ...HandlerFunc) IRoute
-		HEAD(string, ...HandlerFunc) IRoute
+// IRoute - интерфейс роута
+type IRoute interface {
+	IRouteInfo
 
-		CheckPath(string) (map[string]string, bool)
-	}
-	IRouteInfo interface {
-		BasePath() string
-		Handlers() []HandlerFunc
-		HandlerByIndex(index int) (HandlerFunc, bool)
-	}
-	// Router - роутер
-	Router struct {
-		basePath        string              // Путь который обрабатываем роут
-		rxPath          *regexp.Regexp      // Регулярное выражение для проверки пути
-		handlers        []HandlerFunc       // Список обработчиков, в том числе и middleware
-		routeParamNames []string            // Список обнаруженных параметров в пути роута
-		groups          map[string]*Router  // Роутеры (map[relativePath]*Router)
-		routes          map[string][]IRoute // Роуты с группировкой по методу (map[httpMethod][]IRoute)
-	}
-)
+	// Использовать middleware
+	Use(...HandlerFunc) IRoute
+
+	// Обработка запросов к приложению сервера
+	Handle(string, string, ...HandlerFunc) IRoute
+	Any(string, ...HandlerFunc) IRoute
+	GET(string, ...HandlerFunc) IRoute
+	POST(string, ...HandlerFunc) IRoute
+	DELETE(string, ...HandlerFunc) IRoute
+	PATCH(string, ...HandlerFunc) IRoute
+	PUT(string, ...HandlerFunc) IRoute
+	OPTIONS(string, ...HandlerFunc) IRoute
+	HEAD(string, ...HandlerFunc) IRoute
+
+	CheckPath(string) (map[string]string, bool)
+}
+
+// IRouter - интерфейс роутера
+type IRouter interface {
+	IRoute
+	Group(string, ...HandlerFunc) IRouter
+}
+
+// Router - роутер
+type Router struct {
+	basePath        string              // Путь который обрабатываем роут
+	rxPath          *regexp.Regexp      // Регулярное выражение для проверки пути
+	handlers        []HandlerFunc       // Список обработчиков, в том числе и middleware
+	routeParamNames []string            // Список обнаруженных параметров в пути роута
+	groups          map[string]*Router  // Роутеры (map[relativePath]*Router)
+	routes          map[string][]IRoute // Роуты с группировкой по методу (map[httpMethod][]IRoute)
+}
 
 func (r *Router) handle(httpMethod string, relativePath string, handlers []HandlerFunc) IRoute {
 	if r.routes == nil {

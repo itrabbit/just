@@ -9,15 +9,31 @@ type ISerializer interface {
 }
 
 type ISerializerManager interface {
-	SetSerializer(name string, contentTypes []string, serializer ISerializer) ISerializerManager
+	NameDefaultSerializer() string
+	SetNameDefaultSerializer(string) ISerializerManager
+	SetSerializer(string, []string, ISerializer) ISerializerManager
 	GetSerializerByName(string) ISerializer
-	GetSerializerByContentType(contentType string) ISerializer
+	GetSerializerByContentType(string) ISerializer
 }
 
 type serializerManager struct {
 	sync.RWMutex
+	nameDefaultSerializer    string
 	serializersByName        map[string]ISerializer
 	serializersByContentType map[string]ISerializer
+}
+
+func (m *serializerManager) NameDefaultSerializer() string {
+	return m.nameDefaultSerializer
+}
+
+func (m *serializerManager) SetNameDefaultSerializer(name string) ISerializerManager {
+	m.RLock()
+	defer m.RUnlock()
+	if _, ok := m.serializersByName[name]; ok || len(name) < 1 {
+		m.nameDefaultSerializer = name
+	}
+	return m
 }
 
 func (m *serializerManager) SetSerializer(name string, contentTypes []string, serializer ISerializer) ISerializerManager {
@@ -39,8 +55,6 @@ func (m *serializerManager) SetSerializer(name string, contentTypes []string, se
 }
 
 func (m *serializerManager) GetSerializerByName(name string) ISerializer {
-	m.Lock()
-	defer m.Unlock()
 	if m.serializersByName != nil {
 		if s, ok := m.serializersByName[name]; ok {
 			return s
@@ -50,8 +64,6 @@ func (m *serializerManager) GetSerializerByName(name string) ISerializer {
 }
 
 func (m *serializerManager) GetSerializerByContentType(contentType string) ISerializer {
-	m.Lock()
-	defer m.Unlock()
 	if m.serializersByContentType != nil {
 		if s, ok := m.serializersByContentType[contentType]; ok {
 			return s

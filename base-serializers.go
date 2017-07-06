@@ -65,7 +65,7 @@ func (FormSerializer) DefaultContentType() string {
 }
 
 func (FormSerializer) Serialize(v interface{}) ([]byte, error) {
-	return nil, nil
+	return marshalUrlValues(v)
 }
 
 func (FormSerializer) Deserialize(data []byte, v interface{}) error {

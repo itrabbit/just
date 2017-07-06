@@ -3,20 +3,53 @@ package just
 import (
 	"errors"
 	"mime/multipart"
+	"net/url"
 	"reflect"
 	"strconv"
 	"time"
 )
 
-// mapForm - form mapping (+ multipart files support)
-func mapForm(values map[string][]string, files map[string][]*multipart.FileHeader, ptr interface{}) error {
+func marshalUrlValues(ptr interface{}) ([]byte, error) {
 	t, v := reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem()
+	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
+		return nil, errors.New("Array and slice by root element not supported, only structure!")
+	}
+	values := make(url.Values)
 	for i := 0; i < t.NumField(); i++ {
 		typeField, structField := t.Field(i), v.Field(i)
 		if !structField.CanSet() {
 			continue
 		}
 		structFieldKind, inputFieldName := structField.Kind(), typeField.Tag.Get("form")
+		if len(inputFieldName) < 1 {
+			inputFieldName = typeField.Name
+		}
+		if structFieldKind == reflect.Slice {
+			for i := 0; i < structField.Len(); i++ {
+				values.Add(inputFieldName, structField.Index(i).String())
+			}
+		} else {
+			values.Set(inputFieldName, structField.String())
+		}
+	}
+	return []byte(values.Encode()), nil
+}
+
+// mapForm - form mapping (+ multipart files support)
+func mapForm(values map[string][]string, files map[string][]*multipart.FileHeader, ptr interface{}) error {
+	t, v := reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem()
+	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
+		return errors.New("Array and slice by root element not supported, only structure!")
+	}
+	for i := 0; i < t.NumField(); i++ {
+		typeField, structField := t.Field(i), v.Field(i)
+		if !structField.CanSet() {
+			continue
+		}
+		structFieldKind, inputFieldName := structField.Kind(), typeField.Tag.Get("form")
+		if len(inputFieldName) < 1 {
+			inputFieldName = typeField.Name
+		}
 		inputValue, existsValue := values[inputFieldName]
 		if !existsValue {
 			// Check files

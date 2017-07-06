@@ -98,8 +98,8 @@ func (app *Application) handleRouter(router *Router, httpMethod, path string, co
 }
 
 // Application::Run - запуск сервера приложения
-func (app *Application) Run(address string) {
-	http.ListenAndServe(address, app)
+func (app *Application) Run(address string) error {
+	return http.ListenAndServe(address, app)
 }
 
 // Application::GetSerializerManager - менеджер зериализаторов
@@ -129,7 +129,7 @@ func New() *Application {
 	}, &JsonSerializer{}).SetSerializer("form", []string{
 		"multipart/form-data",
 		"application/x-www-form-urlencoded",
-	}, &FormSerializer{})
+	}, &FormSerializer{}).SetNameDefaultSerializer("json")
 	return app
 }
 

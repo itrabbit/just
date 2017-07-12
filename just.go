@@ -2,6 +2,7 @@ package just
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -47,6 +48,26 @@ func (app *Application) checkMethodForHaveBody(method string) bool {
 	return method == "POST" || method == "PATCH" || method == "PUT"
 }
 
+func (app *Application) defResponse404(context *Context) IResponse {
+	return context.ResponseDataFast(404,
+		NewError("404", "Route not found").SetMetadata(H{
+			"method": context.Request.Method,
+			"path":   context.Request.RequestURI,
+		}))
+}
+
+func (app *Application) defResponse501(context *Context) IResponse {
+	meta := H{
+		"method": context.Request.Method,
+		"path":   context.Request.RequestURI,
+	}
+	if context.routeInfo != nil {
+		meta["route"] = context.routeInfo.BasePath()
+	}
+	return context.ResponseDataFast(501,
+		NewError("501", "Response not implemented for current Route").SetMetadata(meta))
+}
+
 // Application::handleHttpRequest - обрабатываем HTTP запрос используя контекст
 func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Context) {
 	if !context.IsValid() {
@@ -63,8 +84,18 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		}
 	}
 	// Выполняем handlers из роутеров
-	response := app.handleRouter(&app.Router, httpMethod, path, context)
-
+	response, existRoute := app.handleRouter(&app.Router, httpMethod, path, context)
+	// Если ответ пустой
+	if response == nil {
+		// Если ответа так и нет, но был найден роут -> выдаем ошибку пустого ответа
+		if existRoute {
+			// 501 ошибка
+			response = app.defResponse501(context)
+		} else {
+			// Если ничего так и нет, выводим 404 ошибку
+			response = app.defResponse404(context)
+		}
+	}
 	// Отправляем response клиенту
 	if response != nil {
 		if headers := response.GetHeaders(); len(headers) > 0 {
@@ -81,17 +112,16 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		w.Write(response.GetData())
 		return
 	}
-	// Если ничего так и нет, выводим 404 ошибку
-
+	panic(errors.New("Empty Response"))
 }
 
 // Application::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст
-func (app *Application) handleRouter(router *Router, httpMethod, path string, context *Context) IResponse {
+func (app *Application) handleRouter(router *Router, httpMethod, path string, context *Context) (IResponse, bool) {
 	if router != nil {
 		// Работа с событиями
 		if router.handlers != nil && len(router.handlers) > 0 {
-			if resp := context.resetRoute(router, nil).Next(); resp != nil {
-				return resp
+			if resp, ok := context.resetRoute(router, nil).Next(); ok && resp != nil {
+				return resp, ok
 			}
 		}
 		// Поиск роута
@@ -113,7 +143,7 @@ func (app *Application) handleRouter(router *Router, httpMethod, path string, co
 			}
 		}
 	}
-	return nil
+	return nil, false
 }
 
 // Application::Run - запуск сервера приложения

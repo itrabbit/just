@@ -1,6 +1,8 @@
 package just
 
-import "sync"
+import (
+	"sync"
+)
 
 type ISerializer interface {
 	DefaultContentType() string
@@ -12,6 +14,7 @@ type ISerializerManager interface {
 	NameDefaultSerializer() (string, bool)
 	SetNameDefaultSerializer(string) ISerializerManager
 	SetSerializer(string, []string, ISerializer) ISerializerManager
+	GetSerializerNames() []string
 	GetSerializerByName(string) ISerializer
 	GetSerializerByContentType(string) ISerializer
 }
@@ -22,6 +25,14 @@ type serializerManager struct {
 	nameDefaultSerializer    string
 	serializersByName        map[string]ISerializer
 	serializersByContentType map[string]ISerializer
+}
+
+func (m *serializerManager) GetSerializerNames() []string {
+	names := make([]string, 0)
+	for name, _ := range m.serializersByName {
+		names = append(names, name)
+	}
+	return names
 }
 
 func (m *serializerManager) NameDefaultSerializer() (string, bool) {

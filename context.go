@@ -44,6 +44,36 @@ func (c *Context) RouteBasePath() string {
 	return ""
 }
 
+// Context::GetNameSerializer - поиск имени сериализатора в контексте
+func (c *Context) GetNameSerializer() string {
+	var name string
+	if v, ok := c.Query("_format"); ok {
+		name = v
+	} else if v := c.RequestHeader("SERIALIZER-FORMAT"); len(v) > 1 {
+		name = v
+	} else if v, ok := c.PostForm("_format"); ok {
+		name = v
+	}
+	if len(name) > 1 {
+		if _, ok := c.app.serializerManager.serializersByName[name]; ok {
+			return name
+		}
+	}
+	if defName, ok := c.app.GetSerializerManager().NameDefaultSerializer(); ok {
+		return defName
+	}
+	return "json"
+}
+
+// Context::GetDefaultSerializer - получить сериализер по умолчанию
+func (c *Context) GetDefaultSerializer() ISerializer {
+	sDef, ok := c.app.GetSerializerManager().NameDefaultSerializer()
+	if !ok {
+		sDef = "json"
+	}
+	return c.app.GetSerializerManager().GetSerializerByName(sDef)
+}
+
 // Context::GetSerializer - получить сериализатор по имени или типу контента
 func (c *Context) GetSerializer(s string) ISerializer {
 	if strings.Index(s, "/") > 0 {
@@ -90,9 +120,9 @@ func (c *Context) ResponseData(serializer string, status int, v interface{}) IRe
 	return nil
 }
 
-func (c *Context) ResponseDataDef(status int, v interface{}) IResponse {
-	defName, _ := c.app.serializerManager.NameDefaultSerializer()
-	return c.ResponseData(defName, status, v)
+// Context::ResponseDataFast - создаем ответ с данными через распознанный сериализатор
+func (c *Context) ResponseDataFast(status int, v interface{}) IResponse {
+	return c.ResponseData(c.GetNameSerializer(), status, v)
 }
 
 // Context::IsValid - валидация контекста
@@ -101,15 +131,15 @@ func (c *Context) IsValid() bool {
 }
 
 // Context::Next - переходим к выпонение handler
-func (c *Context) Next() IResponse {
+func (c *Context) Next() (IResponse, bool) {
 	c.handleIndex++
 	if handler, ok := c.routeInfo.HandlerByIndex(c.handleIndex); ok {
 		if handler != nil {
-			return handler(c)
+			return handler(c), true
 		}
 		return c.Next()
 	}
-	return nil
+	return nil, false
 }
 
 /**

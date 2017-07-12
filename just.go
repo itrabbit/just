@@ -1,6 +1,8 @@
 package just
 
 import (
+	"bytes"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -22,7 +24,7 @@ type Application struct {
 	Router
 	pool sync.Pool
 
-	// Менеджер сериализаторов с поддержкой мультипоточности
+	// Менеджер сериализаторов с поддержкой многопоточности
 	serializerManager serializerManager
 }
 
@@ -41,13 +43,25 @@ func (app *Application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app.pool.Put(context)
 }
 
+func (app *Application) checkMethodForHaveBody(method string) bool {
+	return method == "POST" || method == "PATCH" || method == "PUT"
+}
+
 // Application::handleHttpRequest - обрабатываем HTTP запрос используя контекст
 func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Context) {
 	if !context.IsValid() {
 		return
 	}
 	httpMethod, path := context.Request.Method, context.Request.URL.Path
-
+	if app.checkMethodForHaveBody(strings.ToUpper(httpMethod)) && context.Request.Body != nil {
+		// TODO: Временное преобразование, исправить в будущем
+		// Преобразовываем данные
+		if b, _ := ioutil.ReadAll(context.Request.Body); len(b) > 0 {
+			context.Request.Body.Close()
+			// Новое тело запроса с возможностью сбрасывания позиции чтения
+			context.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
+		}
+	}
 	// Выполняем handlers из роутеров
 	response := app.handleRouter(&app.Router, httpMethod, path, context)
 

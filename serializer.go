@@ -16,6 +16,7 @@ type ISerializerManager interface {
 	GetSerializerByContentType(string) ISerializer
 }
 
+// serializerManager менеджер сериализаторов
 type serializerManager struct {
 	sync.RWMutex
 	nameDefaultSerializer    string

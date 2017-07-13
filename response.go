@@ -3,8 +3,6 @@ package just
 import (
 	"encoding/json"
 	"encoding/xml"
-	"strconv"
-	"unicode/utf8"
 )
 
 type IResponse interface {
@@ -48,31 +46,7 @@ func JsonResponse(status int, v interface{}) IResponse {
 	}
 }
 
-func hexEscapeNonASCII(s string) string {
-	newLen := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] >= utf8.RuneSelf {
-			newLen += 3
-		} else {
-			newLen++
-		}
-	}
-	if newLen == len(s) {
-		return s
-	}
-	b := make([]byte, 0, newLen)
-	for i := 0; i < len(s); i++ {
-		if s[i] >= utf8.RuneSelf {
-			b = append(b, '%')
-			b = strconv.AppendInt(b, int64(s[i]), 16)
-		} else {
-			b = append(b, s[i])
-		}
-	}
-	return string(b)
-}
-
-// RedirectResponse создание редиректа
+// RedirectResponse создание жесткого редиректа
 func RedirectResponse(status int, location string) IResponse {
 	if (status < 300 || status > 308) && status != 201 {
 		status = 301

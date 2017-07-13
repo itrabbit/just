@@ -1,7 +1,6 @@
 package just
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -134,7 +133,6 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 					regExpPattern = strings.Replace(regExpPattern, param[0], patternParamString, 1)
 				}
 			}
-			fmt.Println("Registration route: " + basePath + " pattern: ^" + regExpPattern + "$")
 			var err error
 			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
 			if err != nil {

@@ -3,6 +3,7 @@ package just
 import (
 	"errors"
 	"io/ioutil"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/url"
@@ -89,6 +90,13 @@ func (c *Context) Bind(ptr interface{}) error {
 	if c.Request == nil {
 		return errors.New("Empty request")
 	}
+	if (c.Request.Method == "GET" || c.Request.Method == "DELETE") && c.Request.URL != nil {
+		s := c.app.GetSerializerManager().GetSerializerByContentType("application/x-www-form-urlencoded")
+		if s == nil {
+			return errors.New("Not find Serializer for url query (application/x-www-form-urlencoded)")
+		}
+		return s.Deserialize([]byte(c.Request.URL.RawQuery), ptr)
+	}
 	if c.Request.Body == nil {
 		return errors.New("Empty request body")
 	}
@@ -132,14 +140,24 @@ func (c *Context) IsValid() bool {
 
 // Context::Next - переходим к выпонение handler
 func (c *Context) Next() (IResponse, bool) {
-	c.handleIndex++
-	if handler, ok := c.routeInfo.HandlerByIndex(c.handleIndex); ok {
-		if handler != nil {
-			return handler(c), true
+	if c.routeInfo != nil {
+		c.handleIndex++
+		if handler, ok := c.routeInfo.HandlerByIndex(c.handleIndex); ok {
+			if handler != nil {
+				return handler(c), true
+			}
+			return c.Next()
 		}
-		return c.Next()
 	}
 	return nil, false
+}
+
+// Context::MustNext - переходим к выпонение handler
+func (c *Context) MustNext() IResponse {
+	if res, ok := c.Next(); ok {
+		return res
+	}
+	return nil
 }
 
 /**
@@ -413,6 +431,22 @@ func (c *Context) PostFormArrayDef(key string, def []string) []string {
 		return values
 	}
 	return def
+}
+
+func (c *Context) FormFile(name string) (*multipart.FileHeader, error) {
+	_, fh, err := c.Request.FormFile(name)
+	if c.IsFrozenRequestBody {
+		c.ResetBodyReaderPosition()
+	}
+	return fh, err
+}
+
+func (c *Context) MultipartForm() (*multipart.Form, error) {
+	err := c.Request.ParseMultipartForm(defaultMaxMultipartSize)
+	if c.IsFrozenRequestBody {
+		c.ResetBodyReaderPosition()
+	}
+	return c.Request.MultipartForm, err
 }
 
 /**

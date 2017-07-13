@@ -2,7 +2,6 @@ package just
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,7 +11,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.2"
+	Version      = "v0.0.3"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -24,6 +23,13 @@ var debugMode bool = true
 type Application struct {
 	Router
 	pool sync.Pool
+
+	// Кодировка ответа по умолчанию
+	defCharset string
+
+	// Стандартные обработчики ошибок
+	noRoute       HandlerFunc
+	noImplemented HandlerFunc
 
 	// Менеджер сериализаторов с поддержкой многопоточности
 	serializerManager serializerManager
@@ -48,26 +54,6 @@ func (app *Application) checkMethodForHaveBody(method string) bool {
 	return method == "POST" || method == "PATCH" || method == "PUT"
 }
 
-func (app *Application) defResponse404(context *Context) IResponse {
-	return context.ResponseDataFast(404,
-		NewError("404", "Route not found").SetMetadata(H{
-			"method": context.Request.Method,
-			"path":   context.Request.RequestURI,
-		}))
-}
-
-func (app *Application) defResponse501(context *Context) IResponse {
-	meta := H{
-		"method": context.Request.Method,
-		"path":   context.Request.RequestURI,
-	}
-	if context.routeInfo != nil {
-		meta["route"] = context.routeInfo.BasePath()
-	}
-	return context.ResponseDataFast(501,
-		NewError("501", "Response not implemented for current Route").SetMetadata(meta))
-}
-
 // Application::handleHttpRequest - обрабатываем HTTP запрос используя контекст
 func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Context) {
 	if !context.IsValid() {
@@ -90,19 +76,29 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		// Если ответа так и нет, но был найден роут -> выдаем ошибку пустого ответа
 		if existRoute {
 			// 501 ошибка
-			response = app.defResponse501(context)
+			response = app.noImplemented(context)
 		} else {
 			// Если ничего так и нет, выводим 404 ошибку
-			response = app.defResponse404(context)
+			response = app.noRoute(context)
 		}
 	}
 	// Отправляем response клиенту
 	if response != nil {
 		if headers := response.GetHeaders(); len(headers) > 0 {
 			for key, value := range headers {
+				if key == "_ThisStrongRedirect" {
+					continue
+				}
+				if key == "Location" {
+					if _, ok := headers["_ThisStrongRedirect"]; ok {
+						// Определенный редирект
+						http.Redirect(w, context.Request, value, response.GetStatus())
+						return
+					}
+				}
 				if key == "Content-Type" {
 					if strings.Index(value, ";") < 0 {
-						value = strings.TrimSpace(value) + "; charset=utf-8"
+						value = strings.TrimSpace(value) + "; charset=" + app.defCharset
 					}
 				}
 				w.Header().Set(key, value)
@@ -112,7 +108,9 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		w.Write(response.GetData())
 		return
 	}
-	panic(errors.New("Empty Response"))
+	// Если ничего не смогли сделать, выдаем 500 ошибку
+	w.WriteHeader(500)
+	w.Write([]byte("500 - Internal Server Error.\r\nThe server could not process your request, or the response could not be sent."))
 }
 
 // Application::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст
@@ -148,12 +146,57 @@ func (app *Application) handleRouter(router *Router, httpMethod, path string, co
 
 // Application::Run - запуск сервера приложения
 func (app *Application) Run(address string) error {
+	if len(app.defCharset) < 2 {
+		app.defCharset = "utf-8"
+	}
 	return http.ListenAndServe(address, app)
+}
+
+// Application::RunTLS - запуск TLS сервера приложения
+func (app *Application) RunTLS(address, certFile, keyFile string) error {
+	if len(app.defCharset) < 2 {
+		app.defCharset = "utf-8"
+	}
+	return http.ListenAndServeTLS(address, certFile, keyFile, app)
 }
 
 // Application::GetSerializerManager - менеджер зериализаторов
 func (app *Application) GetSerializerManager() ISerializerManager {
 	return &app.serializerManager
+}
+
+// Application::NoRoute - установить обработчик отсутствия роута - 404
+func (app *Application) NoRoute(handler HandlerFunc) *Application {
+	app.noRoute = handler
+	return app
+}
+
+// Application::NoRoute - установить обработчик отсутствия реализации ответа от роута - 501
+func (app *Application) NoImplemented(handler HandlerFunc) *Application {
+	app.noImplemented = handler
+	return app
+}
+
+// noRouteDefHandler - обработчик ошибки отсутствия роута
+func noRouteDefHandler(context *Context) IResponse {
+	return context.ResponseDataFast(404,
+		NewError("404", "Route not found").SetMetadata(H{
+			"method": context.Request.Method,
+			"path":   context.Request.RequestURI,
+		}))
+}
+
+// noRouteDefHandler - обработчик ошибки отсутствия реализации
+func noImplementedDefHandler(context *Context) IResponse {
+	meta := H{
+		"method": context.Request.Method,
+		"path":   context.Request.RequestURI,
+	}
+	if context.routeInfo != nil {
+		meta["route"] = context.routeInfo.BasePath()
+	}
+	return context.ResponseDataFast(501,
+		NewError("501", "Response not implemented for current Route").SetMetadata(meta))
 }
 
 // New - создаем приложение
@@ -166,6 +209,11 @@ func New() *Application {
 			groups:          nil,
 			routes:          nil,
 		},
+
+		defCharset: "utf-8",
+
+		noRoute:       noRouteDefHandler,
+		noImplemented: noImplementedDefHandler,
 	}
 	app.pool.New = func() interface{} {
 		return &Context{app: app}

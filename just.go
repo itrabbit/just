@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.3"
+	Version      = "v0.0.4"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -89,15 +89,13 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		} else {
 			if headers := response.GetHeaders(); len(headers) > 0 {
 				for key, value := range headers {
-					if key == "_ThisStrongRedirect" {
-						continue
+					if key == "_StrongRedirect" {
+						http.Redirect(w, context.Request, value, response.GetStatus())
+						return
 					}
-					if key == "Location" {
-						if _, ok := headers["_ThisStrongRedirect"]; ok {
-							// Определенный редирект
-							http.Redirect(w, context.Request, value, response.GetStatus())
-							return
-						}
+					if key == "_FilePath" {
+						http.ServeFile(w, context.Request, value)
+						return
 					}
 					if key == "Content-Type" {
 						if strings.Index(value, ";") < 0 {

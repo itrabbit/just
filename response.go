@@ -68,7 +68,7 @@ func RedirectResponse(status int, location string) IResponse {
 	if (status < 300 || status > 308) && status != 201 {
 		status = 301
 	}
-	return &Response{Bytes: nil, Status: status, Headers: map[string]string{"Location": location, "_ThisStrongRedirect": "1"}}
+	return &Response{Bytes: nil, Status: status, Headers: map[string]string{"_StrongRedirect": location}}
 }
 
 // XmlResponse создание ответа в формате xml
@@ -86,4 +86,9 @@ func XmlResponse(status int, v interface{}) IResponse {
 		Status:  status,
 		Headers: map[string]string{"Content-Type": "application/xml"},
 	}
+}
+
+// XmlResponse создание ответа в виде локального файла
+func FileResponse(status int, filePath string) IResponse {
+	return &Response{Bytes: nil, Status: status, Headers: map[string]string{"_FilePath": filePath}}
 }

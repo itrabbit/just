@@ -13,7 +13,7 @@ var (
 )
 
 const (
-	patternParamPath    = "(*?)"
+	patternParamPath    = "(.*?)"
 	patternParamString  = "([^/\\\\]*?)"
 	patternParamFloat   = "([+-]?(\\d*[.])?\\d+)"
 	patternParamInteger = "([+-]?\\d+)"
@@ -49,6 +49,7 @@ type IRoute interface {
 	HEAD(string, ...HandlerFunc) IRoute
 
 	StaticFile(string, string) IRoute
+
 	Static(string, string) IRoute
 	StaticFS(string, http.FileSystem) IRoute
 

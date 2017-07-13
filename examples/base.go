@@ -11,13 +11,9 @@ type TestForm struct {
 func main() {
 	app := just.New()
 	app.Group("/v1").
-		GET("/{id:regexp(\\d+)}", func(c *just.Context) just.IResponse {
-			var form TestForm
-			c.Bind(&form)
-
+		GET("/{path:path}", func(c *just.Context) just.IResponse {
 			return c.ResponseDataFast(201, just.H{
-				"id":   c.GetIntParamDef("id", 0),
-				"name": form.Name,
+				"path": "/" + c.GetParamDef("path", ""),
 			})
 		}).
 		GET("/v", func(c *just.Context) just.IResponse {

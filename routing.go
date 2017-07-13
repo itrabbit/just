@@ -1,6 +1,8 @@
 package just
 
 import (
+	"net/http"
+	"path"
 	"regexp"
 	"strings"
 	"unicode"
@@ -11,6 +13,7 @@ var (
 )
 
 const (
+	patternParamPath    = "(*?)"
 	patternParamString  = "([^/\\\\]*?)"
 	patternParamFloat   = "([+-]?(\\d*[.])?\\d+)"
 	patternParamInteger = "([+-]?\\d+)"
@@ -44,6 +47,10 @@ type IRoute interface {
 	PUT(string, ...HandlerFunc) IRoute
 	OPTIONS(string, ...HandlerFunc) IRoute
 	HEAD(string, ...HandlerFunc) IRoute
+
+	StaticFile(string, string) IRoute
+	Static(string, string) IRoute
+	StaticFS(string, http.FileSystem) IRoute
 
 	CheckPath(string) (map[string]string, bool)
 }
@@ -93,14 +100,16 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 								// Анализ рекомендаций параметра
 								findPattern := true
 								switch req {
+								case "path":
+									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamPath, 1)
+								case "uuid":
+									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamUUID, 1)
 								case "integer":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamInteger, 1)
 								case "float":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFloat, 1)
 								case "boolean":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamBoolean, 1)
-								case "uuid":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamUUID, 1)
 								default:
 									{
 										findPattern = false
@@ -180,6 +189,28 @@ func (r *Router) Handle(httpMethod, relativePath string, handlers ...HandlerFunc
 		panic("HTTP method [" + httpMethod + "] not valid")
 	}
 	return r.handle(httpMethod, relativePath, handlers)
+}
+
+func (r *Router) Static(relativePath, root string) IRoute {
+	return r.StaticFS(relativePath, http.Dir(root))
+}
+
+func (r *Router) StaticFile(relativePath, filePath string) IRoute {
+	handler := func(context *Context) IResponse {
+		return FileResponse(filePath)
+	}
+	return r.GET(relativePath, handler).HEAD(relativePath, handler)
+}
+
+func (r *Router) StaticFS(relativePath string, fs http.FileSystem) IRoute {
+	fileServer := http.StripPrefix(joinPaths(r.basePath, relativePath), http.FileServer(fs))
+	handler := func(context *Context) IResponse {
+		return StreamResponse(func(w http.ResponseWriter, r *http.Request) {
+			fileServer.ServeHTTP(w, r)
+		})
+	}
+	urlPattern := path.Join(relativePath, "/{filepath:path}")
+	return r.GET(urlPattern).HEAD(urlPattern, handler)
 }
 
 func (r *Router) POST(relativePath string, handlers ...HandlerFunc) IRoute {

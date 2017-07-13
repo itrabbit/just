@@ -89,6 +89,6 @@ func XmlResponse(status int, v interface{}) IResponse {
 }
 
 // XmlResponse создание ответа в виде локального файла
-func FileResponse(status int, filePath string) IResponse {
-	return &Response{Bytes: nil, Status: status, Headers: map[string]string{"_FilePath": filePath}}
+func FileResponse(filePath string) IResponse {
+	return &Response{Bytes: nil, Status: -1, Headers: map[string]string{"_FilePath": filePath}}
 }

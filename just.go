@@ -84,28 +84,32 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 	}
 	// Отправляем response клиенту
 	if response != nil {
-		if headers := response.GetHeaders(); len(headers) > 0 {
-			for key, value := range headers {
-				if key == "_ThisStrongRedirect" {
-					continue
-				}
-				if key == "Location" {
-					if _, ok := headers["_ThisStrongRedirect"]; ok {
-						// Определенный редирект
-						http.Redirect(w, context.Request, value, response.GetStatus())
-						return
+		if streamFunc, ok := response.GetStreamHandler(); ok {
+			streamFunc(w, context.Request)
+		} else {
+			if headers := response.GetHeaders(); len(headers) > 0 {
+				for key, value := range headers {
+					if key == "_ThisStrongRedirect" {
+						continue
 					}
-				}
-				if key == "Content-Type" {
-					if strings.Index(value, ";") < 0 {
-						value = strings.TrimSpace(value) + "; charset=" + app.defCharset
+					if key == "Location" {
+						if _, ok := headers["_ThisStrongRedirect"]; ok {
+							// Определенный редирект
+							http.Redirect(w, context.Request, value, response.GetStatus())
+							return
+						}
 					}
+					if key == "Content-Type" {
+						if strings.Index(value, ";") < 0 {
+							value = strings.TrimSpace(value) + "; charset=" + app.defCharset
+						}
+					}
+					w.Header().Set(key, value)
 				}
-				w.Header().Set(key, value)
 			}
+			w.WriteHeader(response.GetStatus())
+			w.Write(response.GetData())
 		}
-		w.WriteHeader(response.GetStatus())
-		w.Write(response.GetData())
 		return
 	}
 	// Если ничего не смогли сделать, выдаем 500 ошибку

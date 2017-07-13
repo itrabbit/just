@@ -3,18 +3,30 @@ package just
 import (
 	"encoding/json"
 	"encoding/xml"
+	"net/http"
 )
+
+type StreamHandler func(w http.ResponseWriter, r *http.Request)
 
 type IResponse interface {
 	GetData() []byte
 	GetStatus() int
 	GetHeaders() map[string]string
+	GetStreamHandler() (StreamHandler, bool)
 }
 
 type Response struct {
 	Status  int
 	Bytes   []byte
 	Headers map[string]string
+	Stream  StreamHandler
+}
+
+func (r *Response) GetStreamHandler() (StreamHandler, bool) {
+	if r.Stream != nil && (r.Bytes == nil || len(r.Bytes) < 1) {
+		return r.Stream, true
+	}
+	return nil, false
 }
 
 func (r *Response) GetStatus() int {
@@ -27,6 +39,11 @@ func (r *Response) GetData() []byte {
 
 func (r *Response) GetHeaders() map[string]string {
 	return r.Headers
+}
+
+// StreamResponse создание потока ответа
+func StreamResponse(handler StreamHandler) IResponse {
+	return &Response{Bytes: nil, Status: -1, Headers: nil, Stream: handler}
 }
 
 // JsonResponse создание ответа в формате JSON

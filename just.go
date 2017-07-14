@@ -2,6 +2,7 @@ package just
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -33,6 +34,14 @@ type Application struct {
 
 	// Менеджер сериализаторов с поддержкой многопоточности
 	serializerManager serializerManager
+
+	// Менеджер профилирования
+	profiler IProfiler
+}
+
+// Application::SetProfiler - назначаем менеджера профилирования
+func (app *Application) SetProfiler(p IProfiler) {
+	app.profiler = p
 }
 
 // Application::ServeHTTP - HTTP Handler
@@ -57,6 +66,9 @@ func (app *Application) checkMethodForHaveBody(method string) bool {
 // Application::handleHttpRequest - обрабатываем HTTP запрос используя контекст
 func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Context) {
 	if !context.IsValid() {
+		if app.profiler != nil {
+			app.profiler.Warning(errors.New("Invalid context"))
+		}
 		return
 	}
 	httpMethod, path := context.Request.Method, context.Request.URL.Path
@@ -67,6 +79,15 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 			context.Request.Body.Close()
 			// Новое тело запроса с возможностью сбрасывания позиции чтения
 			context.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
+		}
+	}
+	if app.profiler != nil {
+		// Фиксация начала обработки запроса
+		app.profiler.StartRequest(context.Request)
+		// Профилирование выходных данных
+		w = &profiledResponseWriter{
+			profiler: app.profiler,
+			writer:   w,
 		}
 	}
 	// Выполняем handlers из роутеров
@@ -81,6 +102,10 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 			// Если ничего так и нет, выводим 404 ошибку
 			response = app.noRoute(context)
 		}
+	}
+	if app.profiler != nil {
+		// Фиксация выбора роута
+		app.profiler.SelectRoute(context.Request, context.routeInfo)
 	}
 	// Отправляем response клиенту
 	if response != nil {
@@ -113,6 +138,9 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 	// Если ничего не смогли сделать, выдаем 500 ошибку
 	w.WriteHeader(500)
 	w.Write([]byte("500 - Internal Server Error.\r\nThe server could not process your request, or the response could not be sent."))
+	if app.profiler != nil {
+		app.profiler.Error(errors.New("Invalid response"))
+	}
 }
 
 // Application::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст

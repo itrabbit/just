@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.4"
+	Version      = "v0.0.5"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -53,13 +53,9 @@ func (app *Application) _printWelcomeMessage(address string, tls bool) {
 	}
 }
 
-func (app *Application) Renderer(name string) IRenderer {
-	return app.templatingManager.Renderer(name)
-}
-
-func (app *Application) SetRenderer(name string, r IRenderer) *Application {
-	app.templatingManager.SetRenderer(name, r)
-	return app
+// Application::Renderer - полчаем отрисовщик по имени
+func (app *Application) TemplatingManager() ITemplatingManager {
+	return &app.templatingManager
 }
 
 // Application::SetProfiler - назначаем менеджера профилирования
@@ -82,6 +78,7 @@ func (app *Application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app.pool.Put(context)
 }
 
+// Application::checkMethodForHaveBody - проверка метода с наличием тела запроса по стандарту
 func (app *Application) checkMethodForHaveBody(method string) bool {
 	return method == "POST" || method == "PATCH" || method == "PUT"
 }
@@ -215,8 +212,8 @@ func (app *Application) RunTLS(address, certFile, keyFile string) error {
 	return http.ListenAndServeTLS(address, certFile, keyFile, app)
 }
 
-// Application::GetSerializerManager - менеджер зериализаторов
-func (app *Application) GetSerializerManager() ISerializerManager {
+// Application::SerializerManager - менеджер зериализаторов
+func (app *Application) SerializerManager() ISerializerManager {
 	return &app.serializerManager
 }
 
@@ -274,6 +271,11 @@ func (app *Application) InitSerializers() *Application {
 	return app
 }
 
+func (app *Application) InitRenderers() *Application {
+	app.TemplatingManager().SetRenderer("html", &HTMLRenderer{})
+	return app
+}
+
 // New - создаем приложение
 func New() *Application {
 	app := &Application{
@@ -290,7 +292,7 @@ func New() *Application {
 		noRoute:       noRouteDefHandler,
 		noImplemented: noImplementedDefHandler,
 	}
-	return app.InitPool().InitSerializers().SetRenderer("html", &HTMLRenderer{})
+	return app.InitPool().InitSerializers().InitRenderers()
 }
 
 func SetDebugMode(value bool) {

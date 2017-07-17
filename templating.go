@@ -1,10 +1,10 @@
 package just
 
 import (
+	"bytes"
+	"errors"
 	"html/template"
 	"sync"
-	"errors"
-	"bytes"
 )
 
 // Интерфейс отрисовки шаблонов
@@ -16,6 +16,11 @@ type IRenderer interface {
 	RemoveFunc(name string) IRenderer
 	Render(name string, data interface{}) ([]byte, error)
 	Response(status int, name string, data interface{}) IResponse
+}
+
+type ITemplatingManager interface {
+	SetRenderer(name string, r IRenderer)
+	Renderer(name string) IRenderer
 }
 
 // templatingManager менеджер шаблонизаторов
@@ -124,7 +129,7 @@ func (r *HTMLRenderer) Render(name string, data interface{}) ([]byte, error) {
 		return nil, errors.New("Have hot templates")
 	}
 	var buffer bytes.Buffer
-	if err := r.template.ExecuteTemplate(buffer, name, data); err != nil {
+	if err := r.template.ExecuteTemplate(&buffer, name, data); err != nil {
 		return nil, err
 	}
 	return buffer.Bytes(), nil
@@ -134,7 +139,7 @@ func (r *HTMLRenderer) Response(status int, name string, data interface{}) IResp
 	if b, err := r.Render(name, data); err == nil {
 		return &Response{
 			Status: status,
-			Bytes: b,
+			Bytes:  b,
 			Headers: map[string]string{
 				"Content-Type": r.DefaultContentType(),
 			},

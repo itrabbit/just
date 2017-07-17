@@ -14,9 +14,9 @@ type ISerializerManager interface {
 	NameDefaultSerializer() (string, bool)
 	SetNameDefaultSerializer(string) ISerializerManager
 	SetSerializer(string, []string, ISerializer) ISerializerManager
-	GetSerializerNames() []string
-	GetSerializerByName(string) ISerializer
-	GetSerializerByContentType(string) ISerializer
+	SerializerNames() []string
+	SerializerByName(string) ISerializer
+	SerializerByContentType(string) ISerializer
 }
 
 // serializerManager менеджер сериализаторов
@@ -27,7 +27,7 @@ type serializerManager struct {
 	serializersByContentType map[string]ISerializer
 }
 
-func (m *serializerManager) GetSerializerNames() []string {
+func (m *serializerManager) SerializerNames() []string {
 	names := make([]string, 0)
 	for name, _ := range m.serializersByName {
 		names = append(names, name)
@@ -71,7 +71,7 @@ func (m *serializerManager) SetSerializer(name string, contentTypes []string, se
 	return m
 }
 
-func (m *serializerManager) GetSerializerByName(name string) ISerializer {
+func (m *serializerManager) SerializerByName(name string) ISerializer {
 	if m.serializersByName != nil {
 		if s, ok := m.serializersByName[name]; ok {
 			return s
@@ -80,7 +80,7 @@ func (m *serializerManager) GetSerializerByName(name string) ISerializer {
 	return nil
 }
 
-func (m *serializerManager) GetSerializerByContentType(contentType string) ISerializer {
+func (m *serializerManager) SerializerByContentType(contentType string) ISerializer {
 	if m.serializersByContentType != nil {
 		if s, ok := m.serializersByContentType[contentType]; ok {
 			return s

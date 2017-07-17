@@ -19,11 +19,13 @@ var (
 	rxValidInteger = regexp.MustCompile(patternParamInteger)
 )
 
+// ValidationError - ошибка валидации структуры
 type ValidationError struct {
 	Field   string
 	Message string
 }
 
+// ValidationError::Error - текст для интерфейса ошибки
 func (e *ValidationError) Error() string {
 	if len(e.Field) > 0 && len(e.Message) > 0 {
 		return "Invalid \"" + e.Field + "\" - " + e.Message
@@ -31,6 +33,7 @@ func (e *ValidationError) Error() string {
 	return "Unknown"
 }
 
+// parseInstruction - парсинг инструкции
 func parseInstruction(instruction string) (string, string) {
 	if start := strings.Index(instruction, "("); start > 0 {
 		if name := strings.ToLower(strings.TrimSpace(instruction[:start])); len(name) > 0 {
@@ -40,6 +43,7 @@ func parseInstruction(instruction string) (string, string) {
 	return strings.ToLower(strings.TrimSpace(instruction)), ""
 }
 
+// validationInt - валидация целого числа
 func validationInt(i int64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -57,6 +61,7 @@ func validationInt(i int64, instruction string) error {
 	return nil
 }
 
+// validationUnsignedInt - валидация целого беззнакового числа
 func validationUnsignedInt(i uint64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -74,6 +79,7 @@ func validationUnsignedInt(i uint64, instruction string) error {
 	return nil
 }
 
+// validationFloat - валидация дробного числа
 func validationFloat(f float64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -91,6 +97,7 @@ func validationFloat(f float64, instruction string) error {
 	return nil
 }
 
+// validationString - валидация строки
 func validationString(str string, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 {
 		switch name {
@@ -121,9 +128,9 @@ func validationString(str string, instruction string) error {
 	return nil
 }
 
-// Valid - валидация структуры объекта
+// Validation - валидация структуры объекта
 func Validation(obj interface{}) []error {
-	result := make([]error, 0)
+	var result []error = nil
 	if obj != nil {
 		if val := reflect.Indirect(reflect.ValueOf(obj)); val.IsValid() {
 			t := val.Type()
@@ -153,6 +160,9 @@ func Validation(obj interface{}) []error {
 									err = errors.New("Unsupported validator")
 								}
 								if err != nil {
+									if result == nil {
+										result = make([]error, 0)
+									}
 									result = append(result, &ValidationError{
 										Field:   field.Name,
 										Message: err.Error(),

@@ -3,6 +3,7 @@ package just
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -37,6 +38,16 @@ type Application struct {
 
 	// Менеджер профилирования
 	profiler IProfiler
+}
+
+// Application::_printWelcomeMessage - выводим приветственное сообщение
+func (app *Application) _printWelcomeMessage(address string, tls bool) {
+	fmt.Print("[WELCOME] Just Web Framework " + Version)
+	if tls {
+		fmt.Println(" [RUN ON " + address + " / TLS]")
+	} else {
+		fmt.Println(" [RUN ON " + address + "]")
+	}
 }
 
 // Application::SetProfiler - назначаем менеджера профилирования
@@ -179,6 +190,7 @@ func (app *Application) Run(address string) error {
 	if len(app.defCharset) < 2 {
 		app.defCharset = "utf-8"
 	}
+	app._printWelcomeMessage(address, false)
 	return http.ListenAndServe(address, app)
 }
 
@@ -187,6 +199,7 @@ func (app *Application) RunTLS(address, certFile, keyFile string) error {
 	if len(app.defCharset) < 2 {
 		app.defCharset = "utf-8"
 	}
+	app._printWelcomeMessage(address, true)
 	return http.ListenAndServeTLS(address, certFile, keyFile, app)
 }
 
@@ -201,7 +214,7 @@ func (app *Application) NoRoute(handler HandlerFunc) *Application {
 	return app
 }
 
-// Application::NoRoute - установить обработчик отсутствия реализации ответа от роута - 501
+// Application::NoImplemented - установить обработчик отсутствия реализации ответа от роута - 501
 func (app *Application) NoImplemented(handler HandlerFunc) *Application {
 	app.noImplemented = handler
 	return app

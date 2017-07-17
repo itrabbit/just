@@ -29,7 +29,7 @@ type serializerManager struct {
 
 func (m *serializerManager) SerializerNames() []string {
 	names := make([]string, 0)
-	for name, _ := range m.serializersByName {
+	for name := range m.serializersByName {
 		names = append(names, name)
 	}
 	return names
@@ -37,7 +37,7 @@ func (m *serializerManager) SerializerNames() []string {
 
 func (m *serializerManager) NameDefaultSerializer() (string, bool) {
 	if len(m.nameDefaultSerializer) < 1 && len(m.serializersByName) > 0 {
-		for name, _ := range m.serializersByName {
+		for name := range m.serializersByName {
 			return name, false
 		}
 	}

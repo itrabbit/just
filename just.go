@@ -36,6 +36,9 @@ type Application struct {
 	// Менеджер сериализаторов с поддержкой многопоточности
 	serializerManager serializerManager
 
+	// Менеджер для работы с шаблонами
+	templatingManager templatingManager
+
 	// Менеджер профилирования
 	profiler IProfiler
 }
@@ -48,6 +51,15 @@ func (app *Application) _printWelcomeMessage(address string, tls bool) {
 	} else {
 		fmt.Println(" [RUN ON " + address + "]")
 	}
+}
+
+func (app *Application) Renderer(name string) IRenderer {
+	return app.templatingManager.Renderer(name)
+}
+
+func (app *Application) SetRenderer(name string, r IRenderer) *Application {
+	app.templatingManager.SetRenderer(name, r)
+	return app
 }
 
 // Application::SetProfiler - назначаем менеджера профилирования
@@ -242,6 +254,26 @@ func noImplementedDefHandler(context *Context) IResponse {
 		NewError("501", "Response not implemented for current Route").SetMetadata(meta))
 }
 
+func (app *Application) InitPool() *Application {
+	app.pool.New = func() interface{} {
+		return &Context{app: app}
+	}
+	return app
+}
+
+func (app *Application) InitSerializers() *Application {
+	app.serializerManager.SetSerializer("json", []string{
+		"application/json",
+	}, &JsonSerializer{}).SetSerializer("xml", []string{
+		"text/xml",
+		"application/xml",
+	}, &XmlSerializer{}).SetSerializer("form", []string{
+		"multipart/form-data",
+		"application/x-www-form-urlencoded",
+	}, &FormSerializer{}).SetNameDefaultSerializer("json")
+	return app
+}
+
 // New - создаем приложение
 func New() *Application {
 	app := &Application{
@@ -258,19 +290,7 @@ func New() *Application {
 		noRoute:       noRouteDefHandler,
 		noImplemented: noImplementedDefHandler,
 	}
-	app.pool.New = func() interface{} {
-		return &Context{app: app}
-	}
-	app.serializerManager.SetSerializer("json", []string{
-		"application/json",
-	}, &JsonSerializer{}).SetSerializer("xml", []string{
-		"text/xml",
-		"application/xml",
-	}, &XmlSerializer{}).SetSerializer("form", []string{
-		"multipart/form-data",
-		"application/x-www-form-urlencoded",
-	}, &FormSerializer{}).SetNameDefaultSerializer("json")
-	return app
+	return app.InitPool().InitSerializers().SetRenderer("html", &HTMLRenderer{})
 }
 
 func SetDebugMode(value bool) {

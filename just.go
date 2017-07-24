@@ -166,18 +166,12 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 // Application::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст
 func (app *Application) handleRouter(router *Router, httpMethod, path string, context *Context) (IResponse, bool) {
 	if router != nil {
-		// Работа с событиями
-		if router.handlers != nil && len(router.handlers) > 0 {
-			if resp, ok := context.resetRoute(router, nil).Next(); ok && resp != nil {
-				return resp, ok
-			}
-		}
 		// Поиск роута
 		if router.routes != nil && len(router.routes) > 0 {
 			if routes, ok := router.routes[httpMethod]; ok && len(routes) > 0 {
 				for _, route := range routes {
 					if params, ok := route.CheckPath(path); ok {
-						return context.resetRoute(route, params).Next()
+						return context.resetRoute(route, params).nextHandler()
 					}
 				}
 			}

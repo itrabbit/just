@@ -143,23 +143,23 @@ func (c *Context) IsValid() bool {
 	return c.app != nil && c.Request != nil
 }
 
-// Context::Next - переходим к выпонение handler
-func (c *Context) Next() (IResponse, bool) {
+// Context::nextHandler - переходим к выпонение следующего handler
+func (c *Context) nextHandler() (IResponse, bool) {
 	if c.routeInfo != nil {
 		c.handleIndex++
 		if handler, ok := c.routeInfo.HandlerByIndex(c.handleIndex); ok {
 			if handler != nil {
 				return handler(c), true
 			}
-			return c.Next()
+			return c.nextHandler()
 		}
 	}
 	return nil, false
 }
 
-// Context::MustNext - переходим к выпонение handler
-func (c *Context) MustNext() IResponse {
-	if res, ok := c.Next(); ok {
+// Context::Next - переходим к выпонение handler
+func (c *Context) Next() IResponse {
+	if res, ok := c.nextHandler(); ok {
 		return res
 	}
 	return nil

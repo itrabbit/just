@@ -26,7 +26,7 @@ type HandlerFunc func(*Context) IResponse
 
 type IRouteInfo interface {
 	BasePath() string
-	Handlers() []HandlerFunc
+	CountHandlers() int
 	HandlerByIndex(index int) (HandlerFunc, bool)
 }
 
@@ -66,8 +66,9 @@ type IRouter interface {
 type Router struct {
 	basePath        string              // Путь который обрабатываем роут
 	rxPath          *regexp.Regexp      // Регулярное выражение для проверки пути
-	handlers        []HandlerFunc       // Список обработчиков, в том числе и middleware
+	handlers        []HandlerFunc       // Список обработчиков, в том числе и middleware доступные в данном роуте
 	routeParamNames []string            // Список обнаруженных параметров в пути роута
+	parent          *Router             // Указатель на родительский роутер
 	groups          map[string]*Router  // Роутеры (map[relativePath]*Router)
 	routes          map[string][]IRoute // Роуты с группировкой по методу (map[httpMethod][]IRoute)
 }
@@ -155,6 +156,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 		rxPath:          rxPath,
 		handlers:        handlers,
 		routeParamNames: routeParamNames,
+		parent:          r,
 		groups:          nil,
 		routes:          nil,
 	})
@@ -175,6 +177,7 @@ func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
 		rxPath:          nil, // TODO: Пока роутер не может иметь параметры в пути
 		handlers:        handlers,
 		routeParamNames: nil,
+		parent:          r,
 		groups:          nil,
 		routes:          nil,
 	}
@@ -280,13 +283,39 @@ func (r *Router) BasePath() string {
 	return r.basePath
 }
 
-func (r *Router) Handlers() []HandlerFunc {
-	return r.handlers
+func (r *Router) composeChainRouters() []*Router {
+	var (
+		router = r
+		chain  = []*Router{r}
+	)
+	for router.parent != nil {
+		router = router.parent
+		chain = append([]*Router{router}, chain...)
+	}
+	return chain
+}
+
+func (r *Router) CountHandlers() int {
+	var (
+		router = r
+		count  = len(r.handlers)
+	)
+	for router.parent != nil {
+		router = router.parent
+		count += len(router.handlers)
+	}
+	return count
 }
 
 func (r *Router) HandlerByIndex(index int) (HandlerFunc, bool) {
-	if index >= 0 && len(r.handlers) > index {
-		return r.handlers[index], true
+	offset := 0
+	// TODO: Оптимизировать в будущем при необходимости
+	chain := r.composeChainRouters()
+	for _, router := range chain {
+		if index >= 0 && index < offset+len(router.handlers) {
+			return router.handlers[index-offset], true
+		}
+		offset += len(router.handlers)
 	}
 	return nil, false
 }

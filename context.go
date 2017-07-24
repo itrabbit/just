@@ -169,17 +169,17 @@ func (c *Context) MustNext() IResponse {
  * Метода для работа с параметрами роутинга
  */
 
-// Context::GetParam - получаем параметр из роутера
-func (c *Context) GetParam(name string) (value string, ok bool) {
+// Context::Param - получаем параметр из роутера
+func (c *Context) Param(name string) (value string, ok bool) {
 	if c.routeParams != nil {
 		value, ok = c.routeParams[name]
 	}
 	return
 }
 
-// Context::GetBoolParam - получаем bool параметр из роутера
-func (c *Context) GetBoolParam(name string) (value bool, ok bool) {
-	if str, exist := c.GetParam(name); exist {
+// Context::ParamBool - получаем bool параметр из роутера
+func (c *Context) ParamBool(name string) (value bool, ok bool) {
+	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseBool(strings.ToLower(str))
 		ok = (err == nil)
@@ -187,9 +187,9 @@ func (c *Context) GetBoolParam(name string) (value bool, ok bool) {
 	return
 }
 
-// Context::GetIntParam - получаем int параметр из роутера
-func (c *Context) GetIntParam(name string) (value int64, ok bool) {
-	if str, exist := c.GetParam(name); exist {
+// Context::ParamInt - получаем int параметр из роутера
+func (c *Context) ParamInt(name string) (value int64, ok bool) {
+	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseInt(str, 10, 64)
 		ok = (err == nil)
@@ -197,9 +197,9 @@ func (c *Context) GetIntParam(name string) (value int64, ok bool) {
 	return
 }
 
-// Context::GetFloatParam - получаем int параметр из роутера
-func (c *Context) GetFloatParam(name string) (value float64, ok bool) {
-	if str, exist := c.GetParam(name); exist {
+// Context::ParamFloat - получаем int параметр из роутера
+func (c *Context) ParamFloat(name string) (value float64, ok bool) {
+	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseFloat(str, 64)
 		ok = (err == nil)
@@ -207,33 +207,33 @@ func (c *Context) GetFloatParam(name string) (value float64, ok bool) {
 	return
 }
 
-// Context::GetParamDef - получаем параметр из роутера с учетом значения по умолчанию
-func (c *Context) GetParamDef(name string, def string) string {
-	if value, ok := c.GetParam(name); ok {
+// Context::ParamDef - получаем параметр из роутера с учетом значения по умолчанию
+func (c *Context) ParamDef(name string, def string) string {
+	if value, ok := c.Param(name); ok {
 		return value
 	}
 	return def
 }
 
-// Context::GetBoolParamDef - получаем параметр из роутера с учетом значения по умолчанию
-func (c *Context) GetBoolParamDef(name string, def bool) bool {
-	if value, ok := c.GetBoolParam(name); ok {
+// Context::ParamBoolDef - получаем параметр из роутера с учетом значения по умолчанию
+func (c *Context) ParamBoolDef(name string, def bool) bool {
+	if value, ok := c.ParamBool(name); ok {
 		return value
 	}
 	return def
 }
 
-// Context::GetIntParamDef - получаем параметр из роутера с учетом значения по умолчанию
-func (c *Context) GetIntParamDef(name string, def int64) int64 {
-	if value, ok := c.GetIntParam(name); ok {
+// Context::ParamIntDef - получаем параметр из роутера с учетом значения по умолчанию
+func (c *Context) ParamIntDef(name string, def int64) int64 {
+	if value, ok := c.ParamInt(name); ok {
 		return value
 	}
 	return def
 }
 
-// Context::GetFloatParamDef - получаем параметр из роутера с учетом значения по умолчанию
-func (c *Context) GetFloatParamDef(name string, def float64) float64 {
-	if value, ok := c.GetFloatParam(name); ok {
+// Context::ParamFloatDef - получаем параметр из роутера с учетом значения по умолчанию
+func (c *Context) ParamFloatDef(name string, def float64) float64 {
+	if value, ok := c.ParamFloat(name); ok {
 		return value
 	}
 	return def

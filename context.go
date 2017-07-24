@@ -55,7 +55,7 @@ func (c *Context) NameSerializer() string {
 	var name string
 	if v, ok := c.Query("_format"); ok {
 		name = v
-	} else if v := c.RequestHeader("SERIALIZER-FORMAT"); len(v) > 1 {
+	} else if v, ok := c.RequestHeader("SERIALIZER-FORMAT"); ok {
 		name = v
 	} else if v, ok := c.PostForm("_format"); ok {
 		name = v
@@ -239,6 +239,22 @@ func (c *Context) ParamFloatDef(name string, def float64) float64 {
 	return def
 }
 
+func (c *Context) MustParam(name string) string {
+	return c.ParamDef(name, "")
+}
+
+func (c *Context) MustParamBool(name string) bool {
+	return c.ParamBoolDef(name, false)
+}
+
+func (c *Context) MustParamInt(name string) int64 {
+	return c.ParamIntDef(name, 0)
+}
+
+func (c *Context) MustParamFloat(name string) float64 {
+	return c.ParamFloatDef(name, 0)
+}
+
 /**
  * Методы для работа с метаданными
  */
@@ -268,6 +284,10 @@ func (c *Context) GetDef(key string, def interface{}) interface{} {
 	return def
 }
 
+func (c *Context) MustGet(key string) interface{} {
+	return c.GetDef(key, nil)
+}
+
 /**
  * Методы для работы с условиями Query Url
  */
@@ -286,6 +306,10 @@ func (c *Context) QueryDef(key, def string) string {
 	return def
 }
 
+func (c *Context) MustQuery(key string) string {
+	return c.QueryDef(key, "")
+}
+
 func (c *Context) QueryBool(key string) (bool, bool) {
 	if str, ok := c.Query(key); ok {
 		if b, err := strconv.ParseBool(strings.ToLower(str)); err == nil {
@@ -300,6 +324,10 @@ func (c *Context) QueryBoolDef(key string, def bool) bool {
 		return value
 	}
 	return def
+}
+
+func (c *Context) MustQueryBool(key string) bool {
+	return c.QueryBoolDef(key, false)
 }
 
 func (c *Context) QueryInt(key string) (int64, bool) {
@@ -318,6 +346,10 @@ func (c *Context) QueryIntDef(key string, def int64) int64 {
 	return def
 }
 
+func (c *Context) MustQueryInt(key string) int64 {
+	return c.QueryIntDef(key, 0)
+}
+
 func (c *Context) QueryFloat(key string) (float64, bool) {
 	if str, ok := c.Query(key); ok {
 		if f, err := strconv.ParseFloat(str, 64); err == nil {
@@ -334,11 +366,8 @@ func (c *Context) QueryFloatDef(key string, def float64) float64 {
 	return def
 }
 
-func (c *Context) QueryArrayDef(key string, def []string) []string {
-	if values, ok := c.QueryArray(key); ok {
-		return values
-	}
-	return def
+func (c *Context) MustQueryFloat(key string) float64 {
+	return c.QueryFloatDef(key, 0)
 }
 
 func (c *Context) QueryArray(key string) ([]string, bool) {
@@ -346,6 +375,17 @@ func (c *Context) QueryArray(key string) ([]string, bool) {
 		return values, true
 	}
 	return []string{}, false
+}
+
+func (c *Context) QueryArrayDef(key string, def []string) []string {
+	if values, ok := c.QueryArray(key); ok {
+		return values
+	}
+	return def
+}
+
+func (c *Context) MustQueryArray(key string) []string {
+	return c.QueryArrayDef(key, make([]string, 0))
 }
 
 /**
@@ -366,6 +406,10 @@ func (c *Context) PostFormDef(key, def string) string {
 	return def
 }
 
+func (c *Context) MustPostForm(key string) string {
+	return c.PostFormDef(key, "")
+}
+
 func (c *Context) PostFormBool(key string) (bool, bool) {
 	if str, ok := c.PostForm(key); ok {
 		if b, err := strconv.ParseBool(str); err == nil {
@@ -380,6 +424,10 @@ func (c *Context) PostFormBoolDef(key string, def bool) bool {
 		return value
 	}
 	return def
+}
+
+func (c *Context) MustPostFormBool(key string) bool {
+	return c.PostFormBoolDef(key, false)
 }
 
 func (c *Context) PostFormInt(key string) (int64, bool) {
@@ -398,6 +446,10 @@ func (c *Context) PostFormIntDef(key string, def int64) int64 {
 	return def
 }
 
+func (c *Context) MustPostFormInt(key string) int64 {
+	return c.PostFormIntDef(key, 0)
+}
+
 func (c *Context) PostFormFloat(key string) (float64, bool) {
 	if str, ok := c.PostForm(key); ok {
 		if f, err := strconv.ParseFloat(str, 64); err == nil {
@@ -412,6 +464,10 @@ func (c *Context) PostFormFloatDef(key string, def float64) float64 {
 		return value
 	}
 	return def
+}
+
+func (c *Context) MustPostFormFloat(key string) float64 {
+	return c.PostFormFloatDef(key, 0)
 }
 
 func (c *Context) PostFormArray(key string) ([]string, bool) {
@@ -436,6 +492,10 @@ func (c *Context) PostFormArrayDef(key string, def []string) []string {
 		return values
 	}
 	return def
+}
+
+func (c *Context) MustPostFormArray(key string) []string {
+	return c.PostFormArrayDef(key, make([]string, 0))
 }
 
 func (c *Context) FormFile(name string) (*multipart.FileHeader, error) {
@@ -474,13 +534,17 @@ func (c *Context) CookieDef(name string, def string) string {
 	return def
 }
 
+func (c *Context) MustCookie(name string) string {
+	return c.CookieDef(name, "")
+}
+
 func (c *Context) ClientIP(forwarded bool) string {
 	if forwarded {
-		clientIP := strings.TrimSpace(c.RequestHeader("X-Real-Ip"))
+		clientIP := strings.TrimSpace(c.MustRequestHeader("X-Real-Ip"))
 		if len(clientIP) > 0 {
 			return clientIP
 		}
-		clientIP = c.RequestHeader("X-Forwarded-For")
+		clientIP = c.MustRequestHeader("X-Forwarded-For")
 		if index := strings.IndexByte(clientIP, ','); index >= 0 {
 			clientIP = clientIP[0:index]
 		}
@@ -496,11 +560,11 @@ func (c *Context) ClientIP(forwarded bool) string {
 }
 
 func (c *Context) UserAgent() string {
-	return c.RequestHeader("User-Agent")
+	return c.MustRequestHeader("User-Agent")
 }
 
 func (c *Context) ContentType() string {
-	contentType := c.RequestHeader("Content-Type")
+	contentType := c.MustRequestHeader("Content-Type")
 	for i, ch := range contentType {
 		if ch == ' ' || ch == ';' {
 			contentType = strings.TrimSpace(contentType[:i])
@@ -510,11 +574,22 @@ func (c *Context) ContentType() string {
 	return contentType
 }
 
-func (c *Context) RequestHeader(key string) string {
-	if values, _ := c.Request.Header[key]; len(values) > 0 {
-		return values[0]
+func (c *Context) RequestHeader(key string) (string, bool) {
+	if values, ok := c.Request.Header[key]; len(values) > 0 && ok {
+		return values[0], true
 	}
-	return ""
+	return "", false
+}
+
+func (c *Context) RequestHeaderDef(key string, def string) string {
+	if value, ok := c.RequestHeader(key); ok {
+		return value
+	}
+	return def
+}
+
+func (c *Context) MustRequestHeader(key string) string {
+	return c.RequestHeaderDef(key, "")
 }
 
 func (c *Context) ResetBodyReaderPosition() error {

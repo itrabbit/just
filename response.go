@@ -6,23 +6,21 @@ import (
 	"net/http"
 )
 
-type StreamHandler func(w http.ResponseWriter, r *http.Request)
-
 type IResponse interface {
 	GetData() []byte
 	GetStatus() int
 	GetHeaders() map[string]string
-	GetStreamHandler() (StreamHandler, bool)
+	GetStreamHandler() (http.HandlerFunc, bool)
 }
 
 type Response struct {
 	Status  int
 	Bytes   []byte
 	Headers map[string]string
-	Stream  StreamHandler
+	Stream  http.HandlerFunc
 }
 
-func (r *Response) GetStreamHandler() (StreamHandler, bool) {
+func (r *Response) GetStreamHandler() (http.HandlerFunc, bool) {
 	if r.Stream != nil && (r.Bytes == nil || len(r.Bytes) < 1) {
 		return r.Stream, true
 	}
@@ -42,7 +40,7 @@ func (r *Response) GetHeaders() map[string]string {
 }
 
 // StreamResponse создание потока ответа
-func StreamResponse(handler StreamHandler) IResponse {
+func StreamResponse(handler http.HandlerFunc) IResponse {
 	return &Response{Bytes: nil, Status: -1, Headers: nil, Stream: handler}
 }
 

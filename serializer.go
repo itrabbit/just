@@ -5,9 +5,10 @@ import (
 )
 
 type ISerializer interface {
-	DefaultContentType() string
+	DefaultContentType(withCharset bool) string
 	Serialize(interface{}) ([]byte, error)
 	Deserialize([]byte, interface{}) error
+	Response(status int, data interface{}) IResponse
 }
 
 type ISerializerManager interface {

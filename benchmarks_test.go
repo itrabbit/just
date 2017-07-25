@@ -34,7 +34,7 @@ func BenchmarkManyHandlers(B *testing.B) {
 func Benchmark5Params(B *testing.B) {
 	app := New()
 	app.Use(func(c *Context) IResponse { return &Response{Status: 200} })
-	app.GET("/param/{param1}/{params2}/{param3}/{param4}/{param5}", func(c *Context) IResponse { return &Response{Status: 200} })
+	app.GET("/param/{param1}/{params2}/{param3}/{param4}/{param5:integer}", func(c *Context) IResponse { return &Response{Status: 200} })
 	runRequest(B, app, "GET", "/param/path/to/parameter/john/12345")
 }
 

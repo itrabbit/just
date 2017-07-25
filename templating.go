@@ -9,7 +9,7 @@ import (
 
 // Интерфейс отрисовки шаблонов
 type IRenderer interface {
-	DefaultContentType() string
+	DefaultContentType(withCharset bool) string
 	LoadTemplateFiles(filenames ...string) error
 	LoadTemplateGlob(name, pattern string) error
 	AddFunc(name string, i interface{}) IRenderer
@@ -56,11 +56,15 @@ func (t *templatingManager) Renderer(name string) IRenderer {
  */
 
 type HTMLRenderer struct {
+	Charset  string
 	template *template.Template
 	funcMap  map[string]interface{}
 }
 
-func (r *HTMLRenderer) DefaultContentType() string {
+func (r *HTMLRenderer) DefaultContentType(withCharset bool) string {
+	if withCharset && len(r.Charset) > 0 {
+		return "text/html; charset=" + r.Charset
+	}
 	return "text/html"
 }
 
@@ -141,7 +145,7 @@ func (r *HTMLRenderer) Response(status int, name string, data interface{}) IResp
 			Status: status,
 			Bytes:  b,
 			Headers: map[string]string{
-				"Content-Type": r.DefaultContentType(),
+				"Content-Type": r.DefaultContentType(true),
 			},
 		}
 	}

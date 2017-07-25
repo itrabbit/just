@@ -26,9 +26,6 @@ type Application struct {
 	Router
 	pool sync.Pool
 
-	// Кодировка ответа по умолчанию
-	defCharset string
-
 	// Стандартные обработчики ошибок
 	noRoute       HandlerFunc
 	noImplemented HandlerFunc
@@ -133,6 +130,7 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 			streamFunc(w, context.Request)
 		} else {
 			if headers := response.GetHeaders(); len(headers) > 0 {
+				// Обработка заголовков
 				for key, value := range headers {
 					if key == "_StrongRedirect" {
 						http.Redirect(w, context.Request, value, response.GetStatus())
@@ -141,11 +139,6 @@ func (app *Application) handleHttpRequest(w http.ResponseWriter, context *Contex
 					if key == "_FilePath" {
 						http.ServeFile(w, context.Request, value)
 						return
-					}
-					if key == "Content-Type" {
-						if strings.Index(value, ";") < 0 {
-							value = strings.TrimSpace(value) + "; charset=" + app.defCharset
-						}
 					}
 					w.Header().Set(key, value)
 				}
@@ -190,18 +183,12 @@ func (app *Application) handleRouter(router *Router, httpMethod, path string, co
 
 // Application::Run - запуск сервера приложения
 func (app *Application) Run(address string) error {
-	if len(app.defCharset) < 2 {
-		app.defCharset = "utf-8"
-	}
 	app._printWelcomeMessage(address, false)
 	return http.ListenAndServe(address, app)
 }
 
 // Application::RunTLS - запуск TLS сервера приложения
 func (app *Application) RunTLS(address, certFile, keyFile string) error {
-	if len(app.defCharset) < 2 {
-		app.defCharset = "utf-8"
-	}
 	app._printWelcomeMessage(address, true)
 	return http.ListenAndServeTLS(address, certFile, keyFile, app)
 }
@@ -255,18 +242,18 @@ func (app *Application) InitPool() *Application {
 func (app *Application) InitSerializers() *Application {
 	app.serializerManager.SetSerializer("json", []string{
 		"application/json",
-	}, &JsonSerializer{}).SetSerializer("xml", []string{
+	}, &JsonSerializer{Charset: "utf-8"}).SetSerializer("xml", []string{
 		"text/xml",
 		"application/xml",
-	}, &XmlSerializer{}).SetSerializer("form", []string{
+	}, &XmlSerializer{Charset: "utf-8"}).SetSerializer("form", []string{
 		"multipart/form-data",
 		"application/x-www-form-urlencoded",
-	}, &FormSerializer{}).SetNameDefaultSerializer("json")
+	}, &FormSerializer{Charset: "utf-8"}).SetNameDefaultSerializer("json")
 	return app
 }
 
 func (app *Application) InitRenderers() *Application {
-	app.TemplatingManager().SetRenderer("html", &HTMLRenderer{})
+	app.TemplatingManager().SetRenderer("html", &HTMLRenderer{Charset: "utf-8"})
 	return app
 }
 
@@ -280,8 +267,6 @@ func New() *Application {
 			groups:          nil,
 			routes:          nil,
 		},
-
-		defCharset: "utf-8",
 
 		noRoute:       noRouteDefHandler,
 		noImplemented: noImplementedDefHandler,

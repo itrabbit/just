@@ -93,7 +93,7 @@ func main() {
 		s1 := just.New()
 		s1.Use(cors.Middleware(cors.Options{}))
 		s1.GET("/welcome/{name}", func(c *just.Context) just.IResponse {
-			return just.JsonResponse(200, just.H{
+			return c.ResponseData("json", 200, just.H{
 				"param_name": c.MustParam("name"),
 				"framework":  "just",
 				"version":    just.Version})

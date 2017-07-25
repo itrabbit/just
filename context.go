@@ -120,15 +120,7 @@ func (c *Context) Bind(ptr interface{}) error {
 // Context::ResponseData - создаем ответ с данными через сериализатор
 func (c *Context) ResponseData(serializer string, status int, v interface{}) IResponse {
 	if s := c.Serializer(serializer); s != nil {
-		if b, err := s.Serialize(v); err == nil {
-			return &Response{
-				Status: status,
-				Bytes:  b,
-				Headers: map[string]string{
-					"Content-Type": s.DefaultContentType(),
-				},
-			}
-		}
+		return s.Response(status, v)
 	}
 	return nil
 }

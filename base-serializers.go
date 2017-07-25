@@ -11,9 +11,14 @@ import (
 
 /** JSON Serializer */
 
-type JsonSerializer struct{}
+type JsonSerializer struct {
+	Charset string
+}
 
-func (JsonSerializer) DefaultContentType() string {
+func (s *JsonSerializer) DefaultContentType(withCharset bool) string {
+	if withCharset && len(s.Charset) > 0 {
+		return "application/json; charset=" + s.Charset
+	}
 	return "application/json"
 }
 
@@ -28,11 +33,28 @@ func (JsonSerializer) Deserialize(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
+func (s *JsonSerializer) Response(status int, data interface{}) IResponse {
+	b, err := s.Serialize(data)
+	if err != nil {
+		return JsonResponse(500, NewError("U500", "Error serialize data to JSON").SetMetadata(H{"error": err.Error()}))
+	}
+	return &Response{
+		Status:  status,
+		Bytes:   b,
+		Headers: map[string]string{"Content-Type": s.DefaultContentType(true)},
+	}
+}
+
 /** XML Serializer */
 
-type XmlSerializer struct{}
+type XmlSerializer struct {
+	Charset string
+}
 
-func (XmlSerializer) DefaultContentType() string {
+func (s *XmlSerializer) DefaultContentType(withCharset bool) string {
+	if withCharset && len(s.Charset) > 0 {
+		return "application/xml; charset=" + s.Charset
+	}
 	return "application/xml"
 }
 
@@ -47,6 +69,18 @@ func (XmlSerializer) Deserialize(data []byte, v interface{}) error {
 	return xml.Unmarshal(data, v)
 }
 
+func (s *XmlSerializer) Response(status int, data interface{}) IResponse {
+	b, err := s.Serialize(data)
+	if err != nil {
+		return XmlResponse(500, NewError("U500", "Error serialize data to XML").SetMetadata(H{"error": err.Error()}))
+	}
+	return &Response{
+		Status:  status,
+		Bytes:   b,
+		Headers: map[string]string{"Content-Type": s.DefaultContentType(true)},
+	}
+}
+
 /** Form Serializer */
 
 const (
@@ -58,9 +92,14 @@ var (
 	urlencodedRx = regexp.MustCompile("([A-Za-z0-9%./]+=[^\\s]+)")
 )
 
-type FormSerializer struct{}
+type FormSerializer struct {
+	Charset string
+}
 
-func (FormSerializer) DefaultContentType() string {
+func (s *FormSerializer) DefaultContentType(withCharset bool) string {
+	if withCharset && len(s.Charset) > 0 {
+		return "application/x-www-form-urlencoded; charset=" + s.Charset
+	}
 	return "application/x-www-form-urlencoded"
 }
 
@@ -89,4 +128,20 @@ func (FormSerializer) Deserialize(data []byte, v interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (s *FormSerializer) Response(status int, data interface{}) IResponse {
+	b, err := s.Serialize(data)
+	if err != nil {
+		return &Response{
+			Status:500,
+			Bytes: []byte("U500. Error serialize data to form urlencoded\r\n"+err.Error()),
+			Headers: map[string]string{"Content-Type": "text/plain; charset=utf-8"},
+		}
+	}
+	return &Response{
+		Status:  status,
+		Bytes:   b,
+		Headers: map[string]string{"Content-Type": s.DefaultContentType(true)},
+	}
 }

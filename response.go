@@ -51,13 +51,13 @@ func JsonResponse(status int, v interface{}) IResponse {
 		return &Response{
 			Bytes:   []byte(err.Error()),
 			Status:  500,
-			Headers: map[string]string{"Content-Type": "plain/text"},
+			Headers: map[string]string{"Content-Type": "plain/text; charset=utf-8"},
 		}
 	}
 	return &Response{
 		Bytes:   b,
 		Status:  status,
-		Headers: map[string]string{"Content-Type": "application/json"},
+		Headers: map[string]string{"Content-Type": "application/json; charset=utf-8"},
 	}
 }
 
@@ -76,13 +76,13 @@ func XmlResponse(status int, v interface{}) IResponse {
 		return &Response{
 			Bytes:   []byte(err.Error()),
 			Status:  500,
-			Headers: map[string]string{"Content-Type": "plain/text"},
+			Headers: map[string]string{"Content-Type": "plain/text; charset=utf-8"},
 		}
 	}
 	return &Response{
 		Bytes:   b,
 		Status:  status,
-		Headers: map[string]string{"Content-Type": "application/xml"},
+		Headers: map[string]string{"Content-Type": "application/xml; charset=utf-8"},
 	}
 }
 

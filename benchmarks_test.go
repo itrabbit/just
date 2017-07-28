@@ -79,20 +79,20 @@ func BenchmarkOneRouteString(B *testing.B) {
 
 func BenchmarkManyRoutesFist(B *testing.B) {
 	app := New()
-	app.Any("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
+	app.ANY("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
 	runRequest(B, app, "GET", "/ping")
 }
 
 func BenchmarkManyRoutesLast(B *testing.B) {
 	app := New()
-	app.Any("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
+	app.ANY("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
 	runRequest(B, app, "OPTIONS", "/ping")
 }
 
 func Benchmark404(B *testing.B) {
 	app := New()
-	app.Any("/something", func(c *Context) IResponse { return &Response{Status: 200} })
-	app.NoRoute(func(c *Context) IResponse { return &Response{Status: 200} })
+	app.ANY("/something", func(c *Context) IResponse { return &Response{Status: 200} })
+	app.SetNoRouteHandler(func(c *Context) IResponse { return &Response{Status: 200} })
 	runRequest(B, app, "GET", "/ping")
 }
 
@@ -107,7 +107,7 @@ func Benchmark404Many(B *testing.B) {
 	app.GET("/delete/{id:integer}", func(c *Context) IResponse { return &Response{Status: 200} })
 	app.GET("/user/{id:integer}/{mode}", func(c *Context) IResponse { return &Response{Status: 200} })
 
-	app.NoRoute(func(c *Context) IResponse { return &Response{Status: 200} })
+	app.SetNoRouteHandler(func(c *Context) IResponse { return &Response{Status: 200} })
 	runRequest(B, app, "GET", "/viewfake")
 }
 
@@ -135,7 +135,7 @@ func (m *mockWriter) WriteString(s string) (n int, err error) {
 
 func (m *mockWriter) WriteHeader(int) {}
 
-func runRequest(B *testing.B, r *Application, method, path string) {
+func runRequest(B *testing.B, r IApplication, method, path string) {
 	// create fake request
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {

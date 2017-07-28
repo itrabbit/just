@@ -2,6 +2,7 @@ package just
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net"
@@ -14,7 +15,7 @@ import (
 // Context - класс контекста данных запроса / ответа
 type Context struct {
 	// Приватные параметры
-	app         *Application      // Приложение
+	app         IApplication      // Приложение
 	routeInfo   IRouteInfo        // Данные текущего роута
 	routeParams map[string]string // Параметры роутинга
 	handleIndex int               // Индекс текущего обработчика
@@ -28,6 +29,7 @@ type Context struct {
 // Context::reset - сбрасываем контекст
 func (c *Context) reset() *Context {
 	c.Request, c.routeInfo, c.routeParams, c.Meta, c.handleIndex = nil, nil, nil, nil, -1
+	c.IsFrozenRequestBody = true
 	return c
 }
 
@@ -43,6 +45,18 @@ func (c *Context) RouteBasePath() string {
 		return c.routeInfo.BasePath()
 	}
 	return ""
+}
+
+// Context::Trans - перевод строки с учетом параметров траслятора
+func (c *Context) Trans(message string, vars ...interface{}) string {
+	if translator := c.app.Translator(); translator != nil {
+		if i, ok := c.Get("locale"); ok {
+			if locale, valid := i.(string); valid {
+				return translator.Trans(locale, message, vars)
+			}
+		}
+	}
+	return fmt.Sprintf(message, vars)
 }
 
 // Context::Renderer - отрисовщик по имени
@@ -61,7 +75,7 @@ func (c *Context) NameSerializer() string {
 		name = v
 	}
 	if len(name) > 1 {
-		if _, ok := c.app.serializerManager.serializersByName[name]; ok {
+		if s := c.app.SerializerManager().SerializerByName(name); s != nil {
 			return name
 		}
 	}

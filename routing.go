@@ -39,7 +39,7 @@ type IRoute interface {
 
 	// Обработка запросов к приложению сервера
 	Handle(string, string, ...HandlerFunc) IRoute
-	Any(string, ...HandlerFunc) IRoute
+	ANY(string, ...HandlerFunc) IRoute
 	GET(string, ...HandlerFunc) IRoute
 	POST(string, ...HandlerFunc) IRoute
 	DELETE(string, ...HandlerFunc) IRoute
@@ -252,7 +252,7 @@ func (r *Router) HEAD(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("HEAD", relativePath, handlers)
 }
 
-func (r *Router) Any(relativePath string, handlers ...HandlerFunc) IRoute {
+func (r *Router) ANY(relativePath string, handlers ...HandlerFunc) IRoute {
 	r.handle("GET", relativePath, handlers)
 	r.handle("POST", relativePath, handlers)
 	r.handle("PUT", relativePath, handlers)

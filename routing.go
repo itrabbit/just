@@ -258,7 +258,6 @@ func (r *Router) ANY(relativePath string, handlers ...HandlerFunc) IRoute {
 	r.handle("PUT", relativePath, handlers)
 	r.handle("PATCH", relativePath, handlers)
 	r.handle("DELETE", relativePath, handlers)
-	r.handle("OPTIONS", relativePath, handlers)
 	return r
 }
 

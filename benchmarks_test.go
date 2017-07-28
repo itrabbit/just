@@ -86,7 +86,7 @@ func BenchmarkManyRoutesFist(B *testing.B) {
 func BenchmarkManyRoutesLast(B *testing.B) {
 	app := New()
 	app.ANY("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "OPTIONS", "/ping")
+	runRequest(B, app, "DELETE", "/ping")
 }
 
 func Benchmark404(B *testing.B) {

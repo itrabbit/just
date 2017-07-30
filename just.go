@@ -257,7 +257,7 @@ func noRouteDefHandler(c *Context) IResponse {
 	return c.Serializer().Response(404,
 		NewError("404", c.Trans("Route not found")).SetMetadata(H{
 			"method": c.Request.Method,
-			"path":   c.Request.RequestURI,
+			"path":   c.Request.URL.Path,
 		}))
 }
 
@@ -265,7 +265,7 @@ func noRouteDefHandler(c *Context) IResponse {
 func noImplementedDefHandler(c *Context) IResponse {
 	meta := H{
 		"method": c.Request.Method,
-		"path":   c.Request.RequestURI,
+		"path":   c.Request.URL.Path,
 	}
 	if c.routeInfo != nil {
 		meta["route"] = c.routeInfo.BasePath()

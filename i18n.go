@@ -62,7 +62,7 @@ func (t *baseTranslator) Trans(locale string, message string, vars ...interface{
 		}
 	}
 	if len(vars) > 0 {
-		return fmt.Sprintf(message, vars)
+		return fmt.Sprintf(message, vars...)
 	}
 	return message
 }

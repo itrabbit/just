@@ -52,12 +52,12 @@ func (c *Context) Trans(message string, vars ...interface{}) string {
 	if translator := c.app.Translator(); translator != nil {
 		if i, ok := c.Get("locale"); ok {
 			if locale, valid := i.(string); valid {
-				return translator.Trans(locale, message, vars)
+				return translator.Trans(locale, message, vars...)
 			}
 		}
 	}
 	if len(vars) > 0 {
-		return fmt.Sprintf(message, vars)
+		return fmt.Sprintf(message, vars...)
 	}
 	return message
 }

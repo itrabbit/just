@@ -207,7 +207,7 @@ func (r *Router) Static(relativePath, root string) IRoute {
 }
 
 func (r *Router) StaticFile(relativePath, filePath string) IRoute {
-	handler := func(context *Context) IResponse {
+	handler := func(c *Context) IResponse {
 		return FileResponse(filePath)
 	}
 	return r.GET(relativePath, handler).HEAD(relativePath, handler)
@@ -215,7 +215,7 @@ func (r *Router) StaticFile(relativePath, filePath string) IRoute {
 
 func (r *Router) StaticFS(relativePath string, fs http.FileSystem) IRoute {
 	fileServer := http.StripPrefix(joinPaths(r.basePath, relativePath), http.FileServer(fs))
-	handler := func(context *Context) IResponse {
+	handler := func(c *Context) IResponse {
 		return StreamResponse(func(w http.ResponseWriter, r *http.Request) {
 			fileServer.ServeHTTP(w, r)
 		})

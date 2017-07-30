@@ -106,12 +106,12 @@ func (app *application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	// Берем контекст из пула
-	context := app.pool.Get().(*Context).reset()
-	context.Request, context.IsFrozenRequestBody = req, true
+	c := app.pool.Get().(*Context).reset()
+	c.Request, c.IsFrozenRequestBody = req, true
 	// Передаем контекст в обработчик запросов для заполнения ответа
-	app.handleHttpRequest(w, context)
+	app.handleHttpRequest(w, c)
 	// Складываем контекст в пул
-	app.pool.Put(context)
+	app.pool.Put(c)
 }
 
 // IApplication::checkMethodForHaveBody - проверка метода с наличием тела запроса по стандарту
@@ -120,26 +120,26 @@ func (app *application) checkMethodForHaveBody(method string) bool {
 }
 
 // IApplication::handleHttpRequest - обрабатываем HTTP запрос используя контекст
-func (app *application) handleHttpRequest(w http.ResponseWriter, context *Context) {
-	if !context.IsValid() {
+func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
+	if !c.IsValid() {
 		if app.profiler != nil {
 			app.profiler.Warning(errors.New("Invalid context"))
 		}
 		return
 	}
-	httpMethod, path := context.Request.Method, context.Request.URL.Path
-	if app.checkMethodForHaveBody(strings.ToUpper(httpMethod)) && context.Request.Body != nil {
+	httpMethod, path := c.Request.Method, c.Request.URL.Path
+	if app.checkMethodForHaveBody(strings.ToUpper(httpMethod)) && c.Request.Body != nil {
 		// TODO: Временное преобразование, исправить в будущем
 		// Преобразовываем данные
-		if b, _ := ioutil.ReadAll(context.Request.Body); len(b) > 0 {
-			context.Request.Body.Close()
+		if b, _ := ioutil.ReadAll(c.Request.Body); len(b) > 0 {
+			c.Request.Body.Close()
 			// Новое тело запроса с возможностью сбрасывания позиции чтения
-			context.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
+			c.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
 		}
 	}
 	if app.profiler != nil {
 		// Фиксация начала обработки запроса
-		app.profiler.StartRequest(context.Request)
+		app.profiler.StartRequest(c.Request)
 		// Профилирование выходных данных
 		w = &profiledResponseWriter{
 			profiler: app.profiler,
@@ -147,36 +147,36 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, context *Contex
 		}
 	}
 	// Выполняем handlers из роутеров
-	response, existRoute := app.handleRouter(&app.Router, httpMethod, path, context)
+	response, existRoute := app.handleRouter(&app.Router, httpMethod, path, c)
 	// Если ответ пустой
 	if response == nil {
 		// Если ответа так и нет, но был найден роут -> выдаем ошибку пустого ответа
 		if existRoute {
 			// 501 ошибка
-			response = app.noImplementedHandler(context)
+			response = app.noImplementedHandler(c)
 		} else {
 			// Если ничего так и нет, выводим 404 ошибку
-			response = app.noRouteHandler(context)
+			response = app.noRouteHandler(c)
 		}
 	}
 	if app.profiler != nil {
 		// Фиксация выбора роута
-		app.profiler.SelectRoute(context.Request, context.routeInfo)
+		app.profiler.SelectRoute(c.Request, c.routeInfo)
 	}
 	// Отправляем response клиенту
 	if response != nil {
 		if streamFunc, ok := response.GetStreamHandler(); ok {
-			streamFunc(w, context.Request)
+			streamFunc(w, c.Request)
 		} else {
 			if headers := response.GetHeaders(); len(headers) > 0 {
 				// Обработка заголовков
 				for key, value := range headers {
 					if key == "_StrongRedirect" {
-						http.Redirect(w, context.Request, value, response.GetStatus())
+						http.Redirect(w, c.Request, value, response.GetStatus())
 						return
 					}
 					if key == "_FilePath" {
-						http.ServeFile(w, context.Request, value)
+						http.ServeFile(w, c.Request, value)
 						return
 					}
 					w.Header().Set(key, value)
@@ -196,14 +196,14 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, context *Contex
 }
 
 // IApplication::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст
-func (app *application) handleRouter(router *Router, httpMethod, path string, context *Context) (IResponse, bool) {
+func (app *application) handleRouter(router *Router, httpMethod, path string, c *Context) (IResponse, bool) {
 	if router != nil {
 		// Поиск роута
 		if router.routes != nil && len(router.routes) > 0 {
 			if routes, ok := router.routes[httpMethod]; ok && len(routes) > 0 {
 				for _, route := range routes {
 					if params, ok := route.CheckPath(path); ok {
-						return context.resetRoute(route, params).nextHandler()
+						return c.resetRoute(route, params).nextHandler()
 					}
 				}
 			}
@@ -212,7 +212,7 @@ func (app *application) handleRouter(router *Router, httpMethod, path string, co
 		if router.groups != nil && len(router.groups) > 0 {
 			for relativePath, r := range router.groups {
 				if strings.Index(path, joinPaths(router.basePath, relativePath)) >= 0 {
-					return app.handleRouter(r, httpMethod, path, context)
+					return app.handleRouter(r, httpMethod, path, c)
 				}
 			}
 		}
@@ -250,25 +250,25 @@ func (app *application) SetNoImplementedHandler(handler HandlerFunc) IApplicatio
 }
 
 // noRouteDefHandler - обработчик ошибки отсутствия роута
-func noRouteDefHandler(context *Context) IResponse {
-	return context.ResponseDataFast(404,
-		NewError("404", "Route not found").SetMetadata(H{
-			"method": context.Request.Method,
-			"path":   context.Request.RequestURI,
+func noRouteDefHandler(c *Context) IResponse {
+	return c.ResponseDataFast(404,
+		NewError("404", c.Trans("Route not found")).SetMetadata(H{
+			"method": c.Request.Method,
+			"path":   c.Request.RequestURI,
 		}))
 }
 
 // noRouteDefHandler - обработчик ошибки отсутствия реализации
-func noImplementedDefHandler(context *Context) IResponse {
+func noImplementedDefHandler(c *Context) IResponse {
 	meta := H{
-		"method": context.Request.Method,
-		"path":   context.Request.RequestURI,
+		"method": c.Request.Method,
+		"path":   c.Request.RequestURI,
 	}
-	if context.routeInfo != nil {
-		meta["route"] = context.routeInfo.BasePath()
+	if c.routeInfo != nil {
+		meta["route"] = c.routeInfo.BasePath()
 	}
-	return context.ResponseDataFast(501,
-		NewError("501", "Response not implemented for current Route").SetMetadata(meta))
+	return c.ResponseDataFast(501,
+		NewError("501", c.Trans("Response not implemented for current Route")).SetMetadata(meta))
 }
 
 func (app *application) initPool() *application {

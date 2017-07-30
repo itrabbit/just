@@ -17,7 +17,7 @@ type ITranslator interface {
 type baseTranslator struct {
 	sync.RWMutex
 	defaultLocale string
-	localisations map[string]TranslationMap
+	localizations map[string]TranslationMap
 }
 
 func (t *baseTranslator) DefaultLocale() string {
@@ -39,23 +39,23 @@ func (t *baseTranslator) AddTranslationMap(locale string, m TranslationMap) ITra
 	t.RLock()
 	defer t.RUnlock()
 
-	if t.localisations == nil {
-		t.localisations = make(map[string]TranslationMap)
+	if t.localizations == nil {
+		t.localizations = make(map[string]TranslationMap)
 	}
-	if _, ok := t.localisations[locale]; !ok {
-		t.localisations[locale] = make(TranslationMap)
+	if _, ok := t.localizations[locale]; !ok {
+		t.localizations[locale] = make(TranslationMap)
 	}
 	if m != nil {
 		for key, value := range m {
-			t.localisations[locale][key] = value
+			t.localizations[locale][key] = value
 		}
 	}
 	return t
 }
 
 func (t *baseTranslator) Trans(locale string, message string, vars ...interface{}) string {
-	if t.localisations == nil {
-		if m, ok := t.localisations[locale]; ok && m != nil {
+	if t.localizations != nil {
+		if m, ok := t.localizations[locale]; ok && m != nil {
 			if transMessage, ok := m[message]; ok {
 				message = transMessage
 			}

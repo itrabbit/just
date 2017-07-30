@@ -54,18 +54,21 @@ func (m *serializerManager) SetDefaultName(name string) ISerializerManager {
 }
 
 func (m *serializerManager) SetSerializer(name string, contentTypes []string, serializer ISerializer) ISerializerManager {
-	m.RLock()
-	defer m.RUnlock()
-	if m.mapByName == nil {
-		m.mapByName = make(map[string]ISerializer)
-	}
-	m.mapByName[name] = serializer
-	if m.mapByContentType == nil {
-		m.mapByContentType = make(map[string]ISerializer)
-	}
-	if contentTypes != nil && len(contentTypes) > 0 {
-		for _, contentType := range contentTypes {
-			m.mapByContentType[contentType] = serializer
+	// TODO: Добавить вывод ошибки в консоль
+	if name != "default" {
+		m.RLock()
+		defer m.RUnlock()
+		if m.mapByName == nil {
+			m.mapByName = make(map[string]ISerializer)
+		}
+		m.mapByName[name] = serializer
+		if m.mapByContentType == nil {
+			m.mapByContentType = make(map[string]ISerializer)
+		}
+		if contentTypes != nil && len(contentTypes) > 0 {
+			for _, contentType := range contentTypes {
+				m.mapByContentType[contentType] = serializer
+			}
 		}
 	}
 	return m

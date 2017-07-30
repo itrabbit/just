@@ -56,7 +56,10 @@ func (c *Context) Trans(message string, vars ...interface{}) string {
 			}
 		}
 	}
-	return fmt.Sprintf(message, vars)
+	if len(vars) > 0 {
+		return fmt.Sprintf(message, vars)
+	}
+	return message
 }
 
 // Context::Renderer - отрисовщик по имени

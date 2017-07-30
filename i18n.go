@@ -1,8 +1,8 @@
 package just
 
 import (
-	"sync"
 	"fmt"
+	"sync"
 )
 
 type TranslationMap map[string]string
@@ -61,5 +61,8 @@ func (t *baseTranslator) Trans(locale string, message string, vars ...interface{
 			}
 		}
 	}
-	return fmt.Sprintf(message, vars)
+	if len(vars) > 0 {
+		return fmt.Sprintf(message, vars)
+	}
+	return message
 }

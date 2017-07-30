@@ -156,7 +156,10 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 			response = app.noImplementedHandler(c)
 		} else {
 			// Если ничего так и нет, выводим 404 ошибку
-			response = app.noRouteHandler(c)
+			// но перед этим прогоняем все обработчики
+			if response = c.resetRoute(app, nil).Next(); response == nil {
+				response = app.noRouteHandler(c)
+			}
 		}
 	}
 	if app.profiler != nil {

@@ -3,12 +3,12 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/itrabbit/just"
-	"github.com/itrabbit/just/components/cors"
-	"net/http"
 	"os"
-	"strconv"
+	"github.com/itrabbit/just/components/cors"
 	"strings"
 	"time"
+	"strconv"
+	"net/http"
 )
 
 var (
@@ -93,7 +93,7 @@ func main() {
 		s1 := just.New()
 		s1.Use(cors.Middleware(cors.Options{}))
 		s1.GET("/welcome/{name}", func(c *just.Context) just.IResponse {
-			return c.ResponseData("json", 200, just.H{
+			return c.Serializer().Response(200, just.H{
 				"param_name": c.MustParam("name"),
 				"framework":  "just",
 				"version":    just.Version})

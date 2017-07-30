@@ -67,44 +67,47 @@ func (c *Context) Renderer(name string) IRenderer {
 	return c.app.TemplatingManager().Renderer(name)
 }
 
-// Context::NameSerializer - поиск имени сериализатора в контексте
-func (c *Context) NameSerializer() string {
+// Context::DetectedSerializerName - определенное имя сериализатора в запросе
+func (c *Context) DetectedSerializerName() string {
 	var name string
 	if v, ok := c.Query("_format"); ok {
 		name = v
-	} else if v, ok := c.RequestHeader("SERIALIZER-FORMAT"); ok {
+	} else if v, ok := c.RequestHeader("FORMAT"); ok {
 		name = v
 	} else if v, ok := c.PostForm("_format"); ok {
 		name = v
 	}
 	if len(name) > 1 {
-		if s := c.app.SerializerManager().SerializerByName(name); s != nil {
+		if s := c.app.SerializerManager().Serializer(name, false); s != nil {
 			return name
 		}
 	}
-	if defName, ok := c.app.SerializerManager().NameDefaultSerializer(); ok {
+	if defName, ok := c.app.SerializerManager().DefaultName(); ok {
 		return defName
 	}
 	return "json"
 }
 
-// Context::DefaultSerializer - получить сериализер по умолчанию
-func (c *Context) DefaultSerializer() ISerializer {
-	sDef, ok := c.app.SerializerManager().NameDefaultSerializer()
-	if !ok {
-		sDef = "json"
-	}
-	return c.app.SerializerManager().SerializerByName(sDef)
-}
-
 // Context::Serializer - получить сериализатор по имени или типу контента
-func (c *Context) Serializer(s string) ISerializer {
-	if strings.Index(s, "/") > 0 {
-		if r := c.app.SerializerManager().SerializerByContentType(s); r != nil {
-			return r
+func (c *Context) Serializer(names ...string) ISerializer {
+	m := c.app.SerializerManager()
+	if len(names) > 0 {
+		for _, n := range names {
+			if n == "default" {
+				if def, ok := m.DefaultName(); ok {
+					return m.Serializer(def, false)
+				}
+			}
+			if strings.Index(n, "/") > 0 {
+				if s := m.Serializer(n, true); s != nil {
+					return s
+				}
+			} else if s := m.Serializer(n, false); s != nil {
+				return s
+			}
 		}
 	}
-	return c.app.SerializerManager().SerializerByName(s)
+	return m.Serializer(c.DetectedSerializerName(), false)
 }
 
 // Context::Bind - десериализация контента запроса в объект
@@ -113,7 +116,7 @@ func (c *Context) Bind(ptr interface{}) error {
 		return errors.New("Empty request")
 	}
 	if (c.Request.Method == "GET" || c.Request.Method == "DELETE") && c.Request.URL != nil {
-		s := c.app.SerializerManager().SerializerByContentType("application/x-www-form-urlencoded")
+		s := c.app.SerializerManager().Serializer("application/x-www-form-urlencoded", true)
 		if s == nil {
 			return errors.New("Not find Serializer for url query (application/x-www-form-urlencoded)")
 		}
@@ -122,7 +125,7 @@ func (c *Context) Bind(ptr interface{}) error {
 	if c.Request.Body == nil {
 		return errors.New("Empty request body")
 	}
-	s := c.app.SerializerManager().SerializerByContentType(c.ContentType())
+	s := c.app.SerializerManager().Serializer(c.ContentType(), true)
 	if s == nil {
 		return errors.New("Not find Serializer for " + c.ContentType())
 	}
@@ -132,19 +135,6 @@ func (c *Context) Bind(ptr interface{}) error {
 		return err
 	}
 	return s.Deserialize(b, ptr)
-}
-
-// Context::ResponseData - создаем ответ с данными через сериализатор
-func (c *Context) ResponseData(serializer string, status int, v interface{}) IResponse {
-	if s := c.Serializer(serializer); s != nil {
-		return s.Response(status, v)
-	}
-	return nil
-}
-
-// Context::ResponseDataFast - создаем ответ с данными через распознанный сериализатор
-func (c *Context) ResponseDataFast(status int, v interface{}) IResponse {
-	return c.ResponseData(c.NameSerializer(), status, v)
 }
 
 // Context::IsValid - валидация контекста

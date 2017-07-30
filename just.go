@@ -251,7 +251,7 @@ func (app *application) SetNoImplementedHandler(handler HandlerFunc) IApplicatio
 
 // noRouteDefHandler - обработчик ошибки отсутствия роута
 func noRouteDefHandler(c *Context) IResponse {
-	return c.ResponseDataFast(404,
+	return c.Serializer().Response(404,
 		NewError("404", c.Trans("Route not found")).SetMetadata(H{
 			"method": c.Request.Method,
 			"path":   c.Request.RequestURI,
@@ -267,7 +267,7 @@ func noImplementedDefHandler(c *Context) IResponse {
 	if c.routeInfo != nil {
 		meta["route"] = c.routeInfo.BasePath()
 	}
-	return c.ResponseDataFast(501,
+	return c.Serializer().Response(501,
 		NewError("501", c.Trans("Response not implemented for current Route")).SetMetadata(meta))
 }
 
@@ -287,7 +287,7 @@ func (app *application) initSerializers() *application {
 	}, &XmlSerializer{Charset: "utf-8"}).SetSerializer("form", []string{
 		"multipart/form-data",
 		"application/x-www-form-urlencoded",
-	}, &FormSerializer{Charset: "utf-8"}).SetNameDefaultSerializer("json")
+	}, &FormSerializer{Charset: "utf-8"}).SetDefaultName("json")
 	return app
 }
 

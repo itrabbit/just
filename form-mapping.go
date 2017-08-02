@@ -37,13 +37,21 @@ func marshalUrlValues(ptr interface{}) ([]byte, error) {
 
 // mapForm - form mapping (+ multipart files support)
 func mapForm(values map[string][]string, files map[string][]*multipart.FileHeader, ptr interface{}) error {
-	t, v := reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem()
+	return recursiveTreeMapForm(values, files, reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem())
+}
+
+func recursiveTreeMapForm(values map[string][]string, files map[string][]*multipart.FileHeader, t reflect.Type, v reflect.Value) error {
 	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
 		return errors.New("Array and slice by root element not supported, only structure!")
 	}
 	for i := 0; i < t.NumField(); i++ {
 		typeField, structField := t.Field(i), v.Field(i)
 		if !structField.CanSet() {
+			if typeField.Type.Kind() == reflect.Struct {
+				if err := recursiveTreeMapForm(values, files, typeField.Type, structField); err != nil {
+					return err
+				}
+			}
 			continue
 		}
 		structFieldKind, inputFieldName := structField.Kind(), typeField.Tag.Get("form")

@@ -570,6 +570,9 @@ func (c *Context) ContentType() string {
 			break
 		}
 	}
+	if len(contentType) < 1 {
+		contentType = "text/plain"
+	}
 	return contentType
 }
 

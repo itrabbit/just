@@ -6,7 +6,6 @@ import (
 	"encoding/xml"
 	"mime/multipart"
 	"net/url"
-	"regexp"
 )
 
 /** JSON Serializer */
@@ -88,10 +87,6 @@ const (
 	defaultMaxUrlSize       = 10 << 20
 )
 
-var (
-	urlencodedRx = regexp.MustCompile("([A-Za-z0-9%./]+=[^\\s]+)")
-)
-
 type FormSerializer struct {
 	Charset string
 }
@@ -108,7 +103,7 @@ func (FormSerializer) Serialize(v interface{}) ([]byte, error) {
 }
 
 func (FormSerializer) Deserialize(data []byte, v interface{}) error {
-	if len(data) <= defaultMaxUrlSize && urlencodedRx.Match(data) {
+	if len(data) <= defaultMaxUrlSize && bytes.Index(data, []byte("\n")) < 0 {
 		values, err := url.ParseQuery(string(data))
 		if err != nil {
 			return err
@@ -117,7 +112,7 @@ func (FormSerializer) Deserialize(data []byte, v interface{}) error {
 	}
 	if end := bytes.LastIndex(data, []byte("--")); end > 0 {
 		if start := bytes.LastIndex(data[:end], []byte("\n--")); start > 0 && end > start {
-			if boundary := string(data[start:end]); len(boundary) > 0 {
+			if boundary := string(data[start+3 : end]); len(boundary) > 0 {
 				r := multipart.NewReader(bytes.NewReader(data), boundary)
 				form, err := r.ReadForm(defaultMaxMultipartSize)
 				if err != nil {
@@ -134,8 +129,8 @@ func (s *FormSerializer) Response(status int, data interface{}) IResponse {
 	b, err := s.Serialize(data)
 	if err != nil {
 		return &Response{
-			Status:500,
-			Bytes: []byte("U500. Error serialize data to form urlencoded\r\n"+err.Error()),
+			Status:  500,
+			Bytes:   []byte("U500. Error serialize data to form urlencoded\r\n" + err.Error()),
 			Headers: map[string]string{"Content-Type": "text/plain; charset=utf-8"},
 		}
 	}

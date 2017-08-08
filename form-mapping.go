@@ -72,7 +72,7 @@ func recursiveTreeMapForm(values map[string][]string, files map[string][]*multip
 								}
 								v.Field(i).Set(slice)
 							}
-						} else if typeField.Type.Name() == "FileHeader" {
+						} else if structField.Type().Elem().Name() == "FileHeader" {
 							structField.Set(reflect.ValueOf(list[0]))
 						}
 					}

@@ -576,6 +576,15 @@ func (c *Context) ContentType() string {
 	return contentType
 }
 
+func (c *Context) RequestHttpScheme() string {
+	if c.Request.URL != nil {
+		if len(c.Request.URL.Scheme) > 1 {
+			return c.Request.URL.Scheme
+		}
+	}
+	return "http"
+}
+
 func (c *Context) RequestHeader(key string) (string, bool) {
 	if values, ok := c.Request.Header[key]; len(values) > 0 && ok {
 		return values[0], true

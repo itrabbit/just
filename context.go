@@ -576,7 +576,7 @@ func (c *Context) ContentType() string {
 	return contentType
 }
 
-func (c *Context) RequestHttpScheme() string {
+func (c *Context) RequestUrlScheme() string {
 	if c.Request.URL != nil {
 		if len(c.Request.URL.Scheme) > 1 {
 			return c.Request.URL.Scheme

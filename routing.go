@@ -77,7 +77,7 @@ type Router struct {
 
 func connectHandlersByRouter(r *Router, handlers []HandlerFunc) []HandlerFunc {
 	if r != nil && r.handlers != nil {
-		return append(r.handlers, handlers...)
+		return append(append(make([]HandlerFunc, 0, 0), r.handlers...), handlers...)
 	}
 	return handlers
 }

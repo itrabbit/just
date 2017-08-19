@@ -1,6 +1,7 @@
 package just
 
 import (
+	"fmt"
 	"net/http"
 	"path"
 	"regexp"
@@ -152,6 +153,9 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 				}
 			}
 			var err error
+			if IsDebug() {
+				fmt.Println("[JUST DEBUG] Registration route regexp: ^" + regExpPattern + "$")
+			}
 			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
 			if err != nil {
 				panic(err)

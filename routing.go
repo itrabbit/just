@@ -18,6 +18,7 @@ const (
 	patternParamString  = "([^/\\\\]*?)"
 	patternParamFloat   = "([+-]?(\\d*[.])?\\d+)"
 	patternParamInteger = "([+-]?\\d+)"
+	patternParamFileExt = "(\\.[A-Za-z0-9]+|)"
 	patternParamBoolean = "(1|0|t|f|true|false|T|F|TRUE|FALSE)"
 	patternParamUUID    = "([a-fA-F0-9]{8}-?[a-f0-9]{4}-?[1-5][a-fA-F0-9]{3}-?[89abAB][a-fA-F0-9]{3}-?[a-fA-F0-9]{12})"
 )
@@ -120,6 +121,8 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFloat, 1)
 								case "boolean":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamBoolean, 1)
+								case "file.ext":
+									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFileExt, 1)
 								default:
 									{
 										findPattern = false
@@ -154,7 +157,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 			}
 			var err error
 			if IsDebug() {
-				fmt.Println("[JUST DEBUG] Registration route regexp: ^" + regExpPattern + "$")
+				fmt.Println("[DEBUG] Registration route regexp: ^" + regExpPattern + "$")
 			}
 			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
 			if err != nil {

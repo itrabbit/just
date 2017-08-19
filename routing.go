@@ -274,7 +274,7 @@ func (r *Router) CheckPath(path string) (map[string]string, bool) {
 			if indexes := r.rxPath.FindStringSubmatchIndex(path); len(indexes) > 2 && len(indexes)%2 == 0 {
 				values := make([]string, 0)
 				for e, i := 0, 2; i < len(indexes); i += 2 {
-					if indexes[i] > e {
+					if indexes[i] >= e {
 						values = append(values, path[indexes[i]:indexes[i+1]])
 						e = indexes[i+1]
 					}

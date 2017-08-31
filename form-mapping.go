@@ -81,7 +81,7 @@ func recursiveTreeMapForm(values map[string][]string, files map[string][]*multip
 			continue
 		}
 		if numElements := len(inputValue); numElements > 0 {
-			if structFieldKind == reflect.Slice {
+			if structFieldKind == reflect.Slice || structFieldKind == reflect.Array {
 				sliceOf := structField.Type().Elem().Kind()
 				slice := reflect.MakeSlice(structField.Type(), numElements, numElements)
 				for i := 0; i < numElements; i++ {
@@ -97,7 +97,14 @@ func recursiveTreeMapForm(values map[string][]string, files map[string][]*multip
 					}
 					continue
 				}
-				if err := setWithProperType(typeField.Type.Kind(), inputValue[0], structField); err != nil {
+				kind := typeField.Type.Kind()
+				if kind == reflect.Ptr {
+					kind = typeField.Type.Elem().Kind()
+					if structField.IsNil() {
+						structField.Set(reflect.New(typeField.Type.Elem()))
+					}
+				}
+				if err := setWithProperType(kind, inputValue[0], reflect.Indirect(structField)); err != nil {
 					return err
 				}
 			}

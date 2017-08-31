@@ -14,7 +14,11 @@ type JsonSerializer struct {
 	Charset string
 }
 
-func (s *JsonSerializer) DefaultContentType(withCharset bool) string {
+func (JsonSerializer) Name() string {
+	return "json"
+}
+
+func (s JsonSerializer) DefaultContentType(withCharset bool) string {
 	if withCharset && len(s.Charset) > 0 {
 		return "application/json; charset=" + s.Charset
 	}
@@ -32,7 +36,7 @@ func (JsonSerializer) Deserialize(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
 
-func (s *JsonSerializer) Response(status int, data interface{}) IResponse {
+func (s JsonSerializer) Response(status int, data interface{}) IResponse {
 	b, err := s.Serialize(data)
 	if err != nil {
 		return JsonResponse(500, NewError("U500", "Error serialize data to JSON").SetMetadata(H{"error": err.Error()}))
@@ -50,7 +54,11 @@ type XmlSerializer struct {
 	Charset string
 }
 
-func (s *XmlSerializer) DefaultContentType(withCharset bool) string {
+func (XmlSerializer) Name() string {
+	return "xml"
+}
+
+func (s XmlSerializer) DefaultContentType(withCharset bool) string {
 	if withCharset && len(s.Charset) > 0 {
 		return "application/xml; charset=" + s.Charset
 	}
@@ -68,7 +76,7 @@ func (XmlSerializer) Deserialize(data []byte, v interface{}) error {
 	return xml.Unmarshal(data, v)
 }
 
-func (s *XmlSerializer) Response(status int, data interface{}) IResponse {
+func (s XmlSerializer) Response(status int, data interface{}) IResponse {
 	b, err := s.Serialize(data)
 	if err != nil {
 		return XmlResponse(500, NewError("U500", "Error serialize data to XML").SetMetadata(H{"error": err.Error()}))
@@ -91,7 +99,11 @@ type FormSerializer struct {
 	Charset string
 }
 
-func (s *FormSerializer) DefaultContentType(withCharset bool) string {
+func (FormSerializer) Name() string {
+	return "form"
+}
+
+func (s FormSerializer) DefaultContentType(withCharset bool) string {
 	if withCharset && len(s.Charset) > 0 {
 		return "application/x-www-form-urlencoded; charset=" + s.Charset
 	}
@@ -125,7 +137,7 @@ func (FormSerializer) Deserialize(data []byte, v interface{}) error {
 	return nil
 }
 
-func (s *FormSerializer) Response(status int, data interface{}) IResponse {
+func (s FormSerializer) Response(status int, data interface{}) IResponse {
 	b, err := s.Serialize(data)
 	if err != nil {
 		return &Response{

@@ -5,6 +5,7 @@ import (
 )
 
 type ISerializer interface {
+	Name() string
 	DefaultContentType(withCharset bool) string
 	Serialize(interface{}) ([]byte, error)
 	Deserialize([]byte, interface{}) error

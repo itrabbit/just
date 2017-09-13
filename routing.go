@@ -164,6 +164,8 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 				panic(err)
 			}
 		}
+	} else if IsDebug() {
+		fmt.Println("[DEBUG] Registration route: " + basePath)
 	}
 	r.routes[httpMethod] = append(r.routes[httpMethod], &Router{
 		basePath:        basePath,

@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strconv"
 	"time"
-	"fmt"
 )
 
 func marshalUrlValues(ptr interface{}) ([]byte, error) {

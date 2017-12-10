@@ -1,14 +1,15 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/itrabbit/just"
+	"net/http"
 	"os"
-	"github.com/itrabbit/just/components/cors"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/itrabbit/just"
+	"github.com/itrabbit/just/components/cors"
 )
 
 var (

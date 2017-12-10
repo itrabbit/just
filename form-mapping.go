@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+	"fmt"
 )
 
 func marshalUrlValues(ptr interface{}) ([]byte, error) {
@@ -65,7 +66,11 @@ func recursiveTreeMapForm(values map[string][]string, files map[string][]*multip
 				if list, ok := files[inputFieldName]; ok {
 					if numFiles := len(list); numFiles > 0 {
 						if structFieldKind == reflect.Slice {
-							if structField.Type().Elem().Name() == "FileHeader" {
+							elemType := structField.Type().Elem()
+							if elemType.Kind() == reflect.Ptr {
+								elemType = elemType.Elem()
+							}
+							if elemType.Name() == "FileHeader" {
 								slice := reflect.MakeSlice(structField.Type(), numFiles, numFiles)
 								for i := 0; i < numFiles; i++ {
 									slice.Index(i).Set(reflect.ValueOf(list[i]))

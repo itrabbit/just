@@ -26,6 +26,9 @@ func (s JsonSerializer) DefaultContentType(withCharset bool) string {
 }
 
 func (JsonSerializer) Serialize(v interface{}) ([]byte, error) {
+	if input, ok := v.(ISerializeInput); ok {
+		v = input.Data()
+	}
 	if IsDebug() {
 		return json.MarshalIndent(v, "", "    ")
 	}
@@ -66,6 +69,9 @@ func (s XmlSerializer) DefaultContentType(withCharset bool) string {
 }
 
 func (XmlSerializer) Serialize(v interface{}) ([]byte, error) {
+	if input, ok := v.(ISerializeInput); ok {
+		v = input.Data()
+	}
 	if IsDebug() {
 		return xml.MarshalIndent(v, "", "    ")
 	}
@@ -111,6 +117,9 @@ func (s FormSerializer) DefaultContentType(withCharset bool) string {
 }
 
 func (FormSerializer) Serialize(v interface{}) ([]byte, error) {
+	if input, ok := v.(ISerializeInput); ok {
+		v = input.Data()
+	}
 	return marshalUrlValues(v)
 }
 

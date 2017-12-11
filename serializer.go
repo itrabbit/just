@@ -4,6 +4,11 @@ import (
 	"sync"
 )
 
+type ISerializeInput interface {
+	Data() interface{}
+	Options() interface{}
+}
+
 type ISerializer interface {
 	Name() string
 	DefaultContentType(withCharset bool) string
@@ -55,7 +60,6 @@ func (m *serializerManager) SetDefaultName(name string) ISerializerManager {
 }
 
 func (m *serializerManager) SetSerializer(name string, contentTypes []string, serializer ISerializer) ISerializerManager {
-	// TODO: Добавить вывод ошибки в консоль
 	if name != "default" {
 		m.RLock()
 		defer m.RUnlock()

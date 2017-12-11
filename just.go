@@ -13,14 +13,17 @@ import (
 )
 
 const (
-	Version      = "v0.0.7"
+	Version      = "v0.0.8"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
 // Режим отладки
-var debugMutex sync.RWMutex = sync.RWMutex{}
-var debugMode bool = true
+var (
+	debugMutex = sync.RWMutex{}
+	debugMode  = true
+)
 
+// IApplication интерфейс приложения
 type IApplication interface {
 	IRouter
 
@@ -40,7 +43,7 @@ type IApplication interface {
 	RunTLS(address, certFile, keyFile string) error
 }
 
-// application - класс приложения
+// application класс приложения
 type application struct {
 	Router
 	pool sync.Pool
@@ -62,8 +65,8 @@ type application struct {
 	profiler IProfiler
 }
 
-// IApplication::_printWelcomeMessage - выводим приветственное сообщение
-func (app *application) _printWelcomeMessage(address string, tls bool) {
+// application::printWelcomeMessage выводим приветственное сообщение
+func (app *application) printWelcomeMessage(address string, tls bool) {
 	fmt.Print("[WELCOME] Just Web Framework " + Version)
 	if tls {
 		fmt.Println(" [RUN ON " + address + " / TLS]")
@@ -72,34 +75,34 @@ func (app *application) _printWelcomeMessage(address string, tls bool) {
 	}
 }
 
-// IApplication::Translator - полчаем транслятор i18n
+// IApplication::Translator полчаем транслятор i18n
 func (app *application) Translator() ITranslator {
 	return app.translator
 }
 
-// IApplication::Translator - полчаем транслятор i18n
+// IApplication::Translator полчаем транслятор i18n
 func (app *application) Profiler() IProfiler {
 	return app.profiler
 }
 
-// IApplication::Renderer - полчаем отрисовщик по имени
+// IApplication::Renderer полчаем отрисовщик по имени
 func (app *application) TemplatingManager() ITemplatingManager {
 	return &app.templatingManager
 }
 
-// IApplication::SetProfiler - назначаем менеджера профилирования
+// IApplication::SetProfiler назначаем менеджера профилирования
 func (app *application) SetProfiler(p IProfiler) IApplication {
 	app.profiler = p
 	return app
 }
 
-// IApplication::SetTranslator - назначаем транслятор i18n
+// IApplication::SetTranslator назначаем транслятор i18n
 func (app *application) SetTranslator(t ITranslator) IApplication {
 	app.translator = t
 	return app
 }
 
-// IApplication::ServeHTTP - HTTP Handler
+// IApplication::ServeHTTP HTTP Handler
 func (app *application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// Усли поступил несуществующий запрос - выходим
 	if req == nil || w == nil {
@@ -114,12 +117,12 @@ func (app *application) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	app.pool.Put(c)
 }
 
-// IApplication::checkMethodForHaveBody - проверка метода с наличием тела запроса по стандарту
+// IApplication::checkMethodForHaveBody проверка метода с наличием тела запроса по стандарту
 func (app *application) checkMethodForHaveBody(method string) bool {
 	return method == "POST" || method == "PATCH" || method == "PUT"
 }
 
-// IApplication::handleHttpRequest - обрабатываем HTTP запрос используя контекст
+// IApplication::handleHttpRequest обрабатываем HTTP запрос используя контекст
 func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 	if !c.IsValid() {
 		if app.profiler != nil {
@@ -198,7 +201,7 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 	}
 }
 
-// IApplication::handleRouter - обрабатываем HTTP запрос в нужном роуте используя контекст
+// IApplication::handleRouter обрабатываем HTTP запрос в нужном роуте используя контекст
 func (app *application) handleRouter(router *Router, httpMethod, path string, c *Context) (IResponse, bool) {
 	if router != nil {
 		// Поиск роута
@@ -223,36 +226,36 @@ func (app *application) handleRouter(router *Router, httpMethod, path string, c 
 	return nil, false
 }
 
-// IApplication::Run - запуск сервера приложения
+// IApplication::Run запуск сервера приложения
 func (app *application) Run(address string) error {
-	app._printWelcomeMessage(address, false)
+	app.printWelcomeMessage(address, false)
 	return http.ListenAndServe(address, app)
 }
 
-// IApplication::RunTLS - запуск TLS сервера приложения
+// IApplication::RunTLS запуск TLS сервера приложения
 func (app *application) RunTLS(address, certFile, keyFile string) error {
-	app._printWelcomeMessage(address, true)
+	app.printWelcomeMessage(address, true)
 	return http.ListenAndServeTLS(address, certFile, keyFile, app)
 }
 
-// IApplication::SerializerManager - менеджер зериализаторов
+// IApplication::SerializerManager менеджер зериализаторов
 func (app *application) SerializerManager() ISerializerManager {
 	return &app.serializerManager
 }
 
-// IApplication::SetNoRouteHandler - установить обработчик отсутствия роута - 404
+// IApplication::SetNoRouteHandler установить обработчик отсутствия роута - 404
 func (app *application) SetNoRouteHandler(handler HandlerFunc) IApplication {
 	app.noRouteHandler = handler
 	return app
 }
 
-// IApplication::SetNoImplementedHandler - установить обработчик отсутствия реализации ответа от роута - 501
+// IApplication::SetNoImplementedHandler установить обработчик отсутствия реализации ответа от роута - 501
 func (app *application) SetNoImplementedHandler(handler HandlerFunc) IApplication {
 	app.noImplementedHandler = handler
 	return app
 }
 
-// noRouteDefHandler - обработчик ошибки отсутствия роута
+// noRouteDefHandler обработчик ошибки отсутствия роута
 func noRouteDefHandler(c *Context) IResponse {
 	return c.Serializer().Response(404,
 		NewError("404", c.Trans("Route not found")).SetMetadata(H{
@@ -274,6 +277,7 @@ func noImplementedDefHandler(c *Context) IResponse {
 		NewError("501", c.Trans("Response not implemented for current Route")).SetMetadata(meta))
 }
 
+// application::initPool инициализации пула клиентов
 func (app *application) initPool() *application {
 	app.pool.New = func() interface{} {
 		return &Context{app: app}
@@ -281,8 +285,8 @@ func (app *application) initPool() *application {
 	return app
 }
 
-func (app *application) initSerializers() *application {
-	app.serializerManager.SetSerializer("json", []string{
+func SetDefSerializers(app IApplication) IApplication {
+	app.SerializerManager().SetSerializer("json", []string{
 		"application/json",
 	}, &JsonSerializer{Charset: "utf-8"}).SetSerializer("xml", []string{
 		"text/xml",
@@ -294,13 +298,13 @@ func (app *application) initSerializers() *application {
 	return app
 }
 
-func (app *application) initRenderers() *application {
+func SetDefRenderers(app IApplication) IApplication {
 	app.TemplatingManager().SetRenderer("html", &HTMLRenderer{Charset: "utf-8"})
 	return app
 }
 
-// New - создаем приложение
-func New() IApplication {
+// NewClear создаем пустое приложение, без сериализаторов
+func NewClear() IApplication {
 	app := &application{
 		Router: Router{
 			basePath:        "/",
@@ -313,15 +317,22 @@ func New() IApplication {
 		noImplementedHandler: noImplementedDefHandler,
 		translator:           &baseTranslator{defaultLocale: "en"},
 	}
-	return app.initPool().initSerializers().initRenderers()
+	return app.initPool()
 }
 
+// New создаем приложение
+func New() IApplication {
+	return SetDefSerializers(SetDefRenderers(NewClear()))
+}
+
+// SetDebugMode смена режима отладки
 func SetDebugMode(value bool) {
 	debugMutex.RLock()
 	defer debugMutex.RUnlock()
 	debugMode = value
 }
 
+// IsDebug проверка на нахождения в режиме отладки
 func IsDebug() bool {
 	debugMutex.Lock()
 	defer debugMutex.Unlock()

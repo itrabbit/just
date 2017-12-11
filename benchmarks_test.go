@@ -1,6 +1,7 @@
 package just
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 )
@@ -8,19 +9,19 @@ import (
 func BenchmarkOneRoute(B *testing.B) {
 	app := New()
 	app.GET("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/ping")
+	runRequest("BenchmarkOneRoute", B, app, "GET", "/ping")
 }
 
 func BenchmarkRecoveryMiddleware(B *testing.B) {
 	app := New()
 	app.GET("/", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/")
+	runRequest("BenchmarkRecoveryMiddleware", B, app, "GET", "/")
 }
 
 func BenchmarkLoggerMiddleware(B *testing.B) {
 	app := New()
 	app.GET("/", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/")
+	runRequest("BenchmarkLoggerMiddleware", B, app, "GET", "/")
 }
 
 func BenchmarkManyHandlers(B *testing.B) {
@@ -28,14 +29,14 @@ func BenchmarkManyHandlers(B *testing.B) {
 	app.Use(func(c *Context) IResponse { return &Response{Status: 200} })
 	app.Use(func(c *Context) IResponse { return &Response{Status: 200} })
 	app.GET("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/ping")
+	runRequest("BenchmarkManyHandlers", B, app, "GET", "/ping")
 }
 
 func Benchmark5Params(B *testing.B) {
 	app := New()
 	app.Use(func(c *Context) IResponse { return &Response{Status: 200} })
 	app.GET("/param/{param1}/{params2}/{param3}/{param4}/{param5:integer}", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/param/path/to/parameter/john/12345")
+	runRequest("Benchmark5Params", B, app, "GET", "/param/path/to/parameter/john/12345")
 }
 
 func BenchmarkOneRouteJSON(B *testing.B) {
@@ -46,7 +47,7 @@ func BenchmarkOneRouteJSON(B *testing.B) {
 	app.GET("/json", func(c *Context) IResponse {
 		return JsonResponse(200, data)
 	})
-	runRequest(B, app, "GET", "/json")
+	runRequest("BenchmarkOneRouteJSON", B, app, "GET", "/json")
 }
 
 var htmlContentType = []string{"text/html; charset=utf-8"}
@@ -57,7 +58,7 @@ func BenchmarkOneRouteHTML(B *testing.B) {
 	app.GET("/html", func(c *Context) IResponse {
 		return c.Renderer("html").Response(200, "index", "hola")
 	})
-	runRequest(B, app, "GET", "/html")
+	runRequest("BenchmarkOneRouteHTML", B, app, "GET", "/html")
 }
 
 func BenchmarkOneRouteSet(B *testing.B) {
@@ -66,7 +67,7 @@ func BenchmarkOneRouteSet(B *testing.B) {
 		c.Set("key", "value")
 		return &Response{Status: 200}
 	})
-	runRequest(B, app, "GET", "/ping")
+	runRequest("BenchmarkOneRouteSet", B, app, "GET", "/ping")
 }
 
 func BenchmarkOneRouteString(B *testing.B) {
@@ -74,26 +75,26 @@ func BenchmarkOneRouteString(B *testing.B) {
 	app.GET("/text", func(c *Context) IResponse {
 		return &Response{Status: 200, Bytes: []byte("this is a plain text")}
 	})
-	runRequest(B, app, "GET", "/text")
+	runRequest("BenchmarkOneRouteString", B, app, "GET", "/text")
 }
 
 func BenchmarkManyRoutesFist(B *testing.B) {
 	app := New()
 	app.ANY("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/ping")
+	runRequest("BenchmarkManyRoutesFist", B, app, "GET", "/ping")
 }
 
 func BenchmarkManyRoutesLast(B *testing.B) {
 	app := New()
 	app.ANY("/ping", func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "DELETE", "/ping")
+	runRequest("BenchmarkManyRoutesLast", B, app, "DELETE", "/ping")
 }
 
 func Benchmark404(B *testing.B) {
 	app := New()
 	app.ANY("/something", func(c *Context) IResponse { return &Response{Status: 200} })
 	app.SetNoRouteHandler(func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/ping")
+	runRequest("Benchmark404", B, app, "GET", "/ping")
 }
 
 func Benchmark404Many(B *testing.B) {
@@ -108,7 +109,7 @@ func Benchmark404Many(B *testing.B) {
 	app.GET("/user/{id:integer}/{mode}", func(c *Context) IResponse { return &Response{Status: 200} })
 
 	app.SetNoRouteHandler(func(c *Context) IResponse { return &Response{Status: 200} })
-	runRequest(B, app, "GET", "/viewfake")
+	runRequest("Benchmark404Many", B, app, "GET", "/viewfake")
 }
 
 type mockWriter struct {
@@ -135,16 +136,21 @@ func (m *mockWriter) WriteString(s string) (n int, err error) {
 
 func (m *mockWriter) WriteHeader(int) {}
 
-func runRequest(B *testing.B, r IApplication, method, path string) {
+func runRequest(name string, B *testing.B, r IApplication, method, path string) {
 	// create fake request
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
 		panic(err)
 	}
 	w := newMockWriter()
+	fmt.Println(name + ":")
 	B.ReportAllocs()
 	B.ResetTimer()
 	for i := 0; i < B.N; i++ {
 		r.ServeHTTP(w, req)
 	}
+}
+
+func init() {
+	SetDebugMode(false)
 }

@@ -1,6 +1,6 @@
 # JUST Web Framework
 
-<img align="right" width="159px" src="https://raw.githubusercontent.com/itrabbit/just/logo.png">
+<img align="right" width="159px" src="https://raw.githubusercontent.com/itrabbit/just/master/logo.png">
 
 JUST — веб фреймворк, написанный на Go (GoLang). Вдохновлен Gin (GoLang) и Symfony (PHP). JUST не создавался с целью обработки огромных обьемов данных и тем более опережению аналогов (Git, Iris, ...) по скорости работы. В первую очерь хочется добиться удобства и уменьшения времени на разработку ;-)  
 

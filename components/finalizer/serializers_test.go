@@ -1,7 +1,7 @@
 package finalizer
 
 import (
-	"fmt"
+	"bytes"
 	"testing"
 	"time"
 
@@ -48,10 +48,13 @@ func TestJsonSerializer_Serialize(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if len(d) != 1401 {
-		fmt.Println("1401 !=", len(d))
-		fmt.Println(string(d))
+	if bytes.Index(d, []byte("value")) > 0 {
 		t.Fail()
+		return
+	}
+	if bytes.Index(d, []byte("updated_at")) > 0 {
+		t.Fail()
+		return
 	}
 }
 
@@ -80,9 +83,12 @@ func TestXmlSerializer_Serialize(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if len(d) != 1910 {
-		fmt.Println("1910 !=", len(d))
-		fmt.Println(string(d))
+	if bytes.Index(d, []byte("value")) > 0 {
 		t.Fail()
+		return
+	}
+	if bytes.Index(d, []byte("updated_at")) > 0 {
+		t.Fail()
+		return
 	}
 }

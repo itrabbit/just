@@ -4,7 +4,7 @@
 
 [![Build Status](https://travis-ci.org/itrabbit/just.svg?branch=master)](https://travis-ci.org/itrabbit/just)
 
-JUST — веб фреймворк, написанный на Go (GoLang). Вдохновлен Gin (GoLang) и Symfony (PHP). JUST не создавался с целью обработки огромных обьемов данных и тем более опережению аналогов (Git, Iris, ...) по скорости работы. В первую очерь хочется добиться удобства и меньшего времени разработки продуктов ;-)  
+JUST — веб фреймворк, написанный на Go (GoLang). Вдохновлен Gin (GoLang) и Symfony (PHP). JUST не создавался с целью обработки огромных обьемов данных и тем более опережению аналогов (Git, Iris, ...) по скорости работы. В первую очерь хочется добиться удобства и уменьшению времени разработки продуктов ;-)  
 
 > Ping / Pong пример
 
@@ -16,7 +16,7 @@ import "github.com/itrabbit/just"
 func main() {
 	a := just.New()
 	a.GET("/ping", func(c *just.Context) just.IResponse {
-		return c.Serializer().Response(200, just.H{
+		return c.S().Response(200, just.H{
 			"message": "pong",
 		})
 	})
@@ -71,7 +71,7 @@ Benchmark404Many:
  2000000	       607 ns/op	      48 B/op	       1 allocs/op
 ```
 
-## Финализаця резульата сериализации с фильтрацией полей
+## Финализация результата сериализации с фильтрацией полей
 
 [Подробнее](/components/finalizer/README.md)
 

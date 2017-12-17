@@ -62,9 +62,19 @@ func (c *Context) Trans(message string, vars ...interface{}) string {
 	return message
 }
 
+// Context::Tr - перевод строки с учетом параметров траслятора
+func (c *Context) Tr(message string, vars ...interface{}) string {
+	return c.Trans(message, vars...)
+}
+
 // Context::Renderer - отрисовщик по имени
 func (c *Context) Renderer(name string) IRenderer {
 	return c.app.TemplatingManager().Renderer(name)
+}
+
+// Context::R - отрисовщик по имени
+func (c *Context) R(name string) IRenderer {
+	return c.Renderer(name)
 }
 
 // Context::DetectedSerializerName - определенное имя сериализатора в запросе
@@ -108,6 +118,11 @@ func (c *Context) Serializer(names ...string) ISerializer {
 		}
 	}
 	return m.Serializer(c.DetectedSerializerName(), false)
+}
+
+// Context::S - получить сериализатор по имени или типу контента
+func (c *Context) S(names ...string) ISerializer {
+	return c.Serializer(names...)
 }
 
 // Context::Bind - десериализация контента запроса в объект
@@ -181,7 +196,7 @@ func (c *Context) ParamBool(name string) (value bool, ok bool) {
 	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseBool(strings.ToLower(str))
-		ok = (err == nil)
+		ok = err == nil
 	}
 	return
 }
@@ -191,7 +206,7 @@ func (c *Context) ParamInt(name string) (value int64, ok bool) {
 	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseInt(str, 10, 64)
-		ok = (err == nil)
+		ok = err == nil
 	}
 	return
 }
@@ -201,7 +216,7 @@ func (c *Context) ParamFloat(name string) (value float64, ok bool) {
 	if str, exist := c.Param(name); exist {
 		var err error
 		value, err = strconv.ParseFloat(str, 64)
-		ok = (err == nil)
+		ok = err == nil
 	}
 	return
 }

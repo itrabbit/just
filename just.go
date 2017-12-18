@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.8"
+	Version      = "v0.0.9"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -67,11 +67,11 @@ type application struct {
 
 // application::printWelcomeMessage выводим приветственное сообщение
 func (app *application) printWelcomeMessage(address string, tls bool) {
-	fmt.Print("[WELCOME] Just Web Framework " + Version)
+	fmt.Print("[WELCOME] Just Web Framework", Version)
 	if tls {
-		fmt.Println(" [RUN ON " + address + " / TLS]")
+		fmt.Println(" [RUN ON", address, "/ TLS]")
 	} else {
-		fmt.Println(" [RUN ON " + address + "]")
+		fmt.Println(" [RUN ON", address+"]")
 	}
 }
 

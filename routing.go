@@ -157,7 +157,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 			}
 			var err error
 			if IsDebug() {
-				fmt.Println("[DEBUG] Registration route regexp: ^" + regExpPattern + "$")
+				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern)
 			}
 			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
 			if err != nil {
@@ -165,7 +165,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 			}
 		}
 	} else if IsDebug() {
-		fmt.Println("[DEBUG] Registration route: " + basePath)
+		fmt.Println("[DEBUG] Registration", httpMethod, "route:", basePath)
 	}
 	r.routes[httpMethod] = append(r.routes[httpMethod], &Router{
 		basePath:        basePath,

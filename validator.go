@@ -109,7 +109,7 @@ func validationString(str string, instruction string) error {
 			if !rxValidInteger.MatchString(str) {
 				return errors.New("is not integer")
 			}
-		case "float", "f":
+		case "float", "number", "f":
 			if !rxValidFloat.MatchString(str) {
 				return errors.New("is not float")
 			}
@@ -117,7 +117,7 @@ func validationString(str string, instruction string) error {
 			if !rxValidUuid.MatchString(str) {
 				return errors.New("is not UUID")
 			}
-		case "regexp":
+		case "rgx", "regexp":
 			if rx, err := regexp.Compile(value); err == nil && rx != nil {
 				if !rx.MatchString(str) {
 					return errors.New("is not valid by regexp pattern " + value)

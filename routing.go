@@ -111,17 +111,17 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 								// Анализ рекомендаций параметра
 								findPattern := true
 								switch req {
-								case "path":
+								case "p", "path":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamPath, 1)
 								case "uuid":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamUUID, 1)
-								case "integer":
+								case "i", "int", "integer":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamInteger, 1)
-								case "float":
+								case "f", "number", "float":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFloat, 1)
-								case "boolean":
+								case "b", "bool", "boolean":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamBoolean, 1)
-								case "file.ext":
+								case "f.e", "file.ext":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFileExt, 1)
 								default:
 									{
@@ -130,9 +130,9 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 											if t := strings.ToLower(strings.TrimSpace(req[:begin])); len(t) > 0 {
 												if findPattern = t == "regexp" || t == "enum"; findPattern && len(strings.TrimSpace(req[begin+1:end])) > 0 {
 													switch t {
-													case "regexp":
+													case "rgx", "regexp":
 														regExpPattern = strings.Replace(regExpPattern, param[0], strings.TrimSpace(req[begin:]), 1)
-													case "enum":
+													case "e", "enum":
 														regExpPattern = strings.Replace(regExpPattern, param[0], "("+strings.Join(strings.FieldsFunc(req[begin+1:end], func(c rune) bool {
 															return !unicode.IsLetter(c) && !unicode.IsNumber(c)
 														}), "|")+")", 1)

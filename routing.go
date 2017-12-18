@@ -157,7 +157,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 			}
 			var err error
 			if IsDebug() {
-				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern)
+				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern, routeParamNames)
 			}
 			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
 			if err != nil {

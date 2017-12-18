@@ -67,7 +67,7 @@ type application struct {
 
 // application::printWelcomeMessage выводим приветственное сообщение
 func (app *application) printWelcomeMessage(address string, tls bool) {
-	fmt.Print("[WELCOME] Just Web Framework", Version)
+	fmt.Print("[WELCOME] Just Web Framework ", Version)
 	if tls {
 		fmt.Println(" [RUN ON", address, "/ TLS]")
 	} else {

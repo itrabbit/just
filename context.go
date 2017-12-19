@@ -592,6 +592,12 @@ func (c *Context) ContentType() string {
 }
 
 func (c *Context) RequestUrlScheme() string {
+	if value, ok := c.RequestHeader("X-Scheme"); ok && len(value) > 0 {
+		return strings.ToLower(strings.TrimSpace(value))
+	}
+	if value, ok := c.RequestHeader("X-Forwarded-Proto"); ok && len(value) > 0 && value != "http" {
+		return strings.ToLower(strings.TrimSpace(value))
+	}
 	if c.Request.URL != nil {
 		if len(c.Request.URL.Scheme) > 1 {
 			return c.Request.URL.Scheme

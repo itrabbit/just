@@ -99,3 +99,13 @@ http://localhost/api/object/{name}
 // UUID
 http://localhost/api/object/{uuid:uuid}
 ```
+
+# Donation to development
+
+`BTC: 1497z5VaY3AUEUYURS5b5fUTehVwv7wosX`
+
+`DASH: XjBr7sqaCch4Lo1A7BctQz3HzRjybfpx2c`
+
+`XRP: rEQwgdCr8Jma3GY2s55SLoZq2jmqmWUBDY`
+
+`PayPal / Yandex Money: garin1221@yandex.ru`

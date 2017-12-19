@@ -1,14 +1,15 @@
 package cors
 
 import (
-	"github.com/itrabbit/just"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/itrabbit/just"
 )
 
 var (
-	defaultAllowHeaders = []string{"Origin", "Accept", "Content-Type", "Authorization", "X-Auth", "Token"}
+	defaultAllowHeaders = []string{"Origin", "Accept", "Content-Type", "Authorization", "X-Auth", "X-Scheme", "X-Real-Ip", "X-Forwarded-For", "X-Forwarded-Proto", "Token"}
 	defaultAllowMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
 )
 

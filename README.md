@@ -26,6 +26,77 @@ func main() {
 }
 ```
 
+## CLI 
+
+> Install JUST CLI
+
+```sh
+go install github.com/itrabbit/just/cli/just-cli
+```
+
+### Build i18n file from source
+
+```sh
+just-cli i18n:build -lang="en,ru" -dir="{full path to project dir}" -out="i18n.go"
+```
+
+> Example result i18n:build (i18n.go)
+
+```go
+// The file is generated using the CLI JUST.
+// Change only translation strings!
+// Everything else can be removed when re-generating!
+// - - - - - 
+// Last generated time: Sun, 07 Jan 2018 00:56:22 +05
+
+package main
+
+import "github.com/itrabbit/just"
+
+func loadTranslations(t just.ITranslator) {
+	if t != nil {
+		t.AddTranslationMap("en", just.TranslationMap{
+			"Hello World": "Hello World",
+			"Payload": "Payload",
+		})
+		t.AddTranslationMap("ru", just.TranslationMap{
+			"Hello World": "Hello World",
+			"Payload": "Payload",
+		})
+	}
+}
+```
+
+> Usage i18n (main.go)
+
+```go
+package main
+
+import (
+	"github.com/itrabbit/just"
+)
+
+func main() {
+	// Создаем приложение
+	app := just.New()
+
+	// Загружаем перевод
+	loadTranslations(app.Translator())
+
+	// Обработка GET запроса
+	app.GET("", func(c *just.Context) just.IResponse {
+		return c.Serializer().
+			Response(200, &just.H{
+				"msg":     c.Tr("Hello World"),
+				"payload": c.Tr("Payload"),
+			})
+	})
+
+	// Запускаем приложеие
+	app.Run(":8081")
+}
+```
+
 ## Performance testing (on MacBook Pro 15 (2014))
 
 ```

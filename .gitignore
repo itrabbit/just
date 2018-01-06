@@ -14,5 +14,5 @@
 .glide/
 .idea/
 .git/
-cli/app/build
+cli/just-cli/build
 build

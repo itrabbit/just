@@ -6,7 +6,7 @@
  [![CodeCov](https://codecov.io/gh/itrabbit/just/branch/master/graph/badge.svg)](https://codecov.io/gh/itrabbit/just)
  [![GoDoc](https://godoc.org/github.com/itrabbit/just?status.svg)](https://godoc.org/github.com/itrabbit/just)
 
-JUST — Web application framework, written in Go (GoLang). Inspired by the Gin (GoLang) and Symfony (PHP). JUST was not created to handle the huge volume of data and the more pre-empting analogues (Git, Iris, ...). First I want to achieve comfort and ocher reducing product development time ;-)  
+**JUST** — Web application framework, written in Go (GoLang). Inspired by the Gin (GoLang) and Symfony (PHP). JUST was not created to handle the huge volume of data and the more pre-empting analogues (Gin, Iris, Martini, ...). First I want to achieve comfort and ocher reducing product development time ;-)  
 
 > Ping / Pong example
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// Response interface.
 type IResponse interface {
 	GetData() []byte
 	GetStatus() int
@@ -13,11 +14,12 @@ type IResponse interface {
 	GetStreamHandler() (http.HandlerFunc, bool)
 }
 
+// Base Response struct.
 type Response struct {
-	Status  int
-	Bytes   []byte
-	Headers map[string]string
-	Stream  http.HandlerFunc
+	Status  int               // HTTP status (200, 201,...).
+	Bytes   []byte            // Data bytes.
+	Headers map[string]string // Response headers.
+	Stream  http.HandlerFunc  // Stream method, to support standard HTTP package, as well as to work with WS.
 }
 
 func (r *Response) GetStreamHandler() (http.HandlerFunc, bool) {
@@ -39,12 +41,12 @@ func (r *Response) GetHeaders() map[string]string {
 	return r.Headers
 }
 
-// StreamResponse создание потока ответа
+// Create a stream response.
 func StreamResponse(handler http.HandlerFunc) IResponse {
 	return &Response{Bytes: nil, Status: -1, Headers: nil, Stream: handler}
 }
 
-// JsonResponse создание ответа в формате JSON
+// Create a JSON response.
 func JsonResponse(status int, v interface{}) IResponse {
 	b, err := json.Marshal(v)
 	if err != nil {
@@ -61,7 +63,7 @@ func JsonResponse(status int, v interface{}) IResponse {
 	}
 }
 
-// RedirectResponse создание жесткого редиректа
+// Create a redirect response (Use _StrongRedirect in header to set location)
 func RedirectResponse(status int, location string) IResponse {
 	if (status < 300 || status > 308) && status != 201 {
 		status = 301
@@ -69,7 +71,7 @@ func RedirectResponse(status int, location string) IResponse {
 	return &Response{Bytes: nil, Status: status, Headers: map[string]string{"_StrongRedirect": location}}
 }
 
-// XmlResponse создание ответа в формате xml
+// Create a XML response.
 func XmlResponse(status int, v interface{}) IResponse {
 	b, err := xml.Marshal(v)
 	if err != nil {
@@ -86,7 +88,7 @@ func XmlResponse(status int, v interface{}) IResponse {
 	}
 }
 
-// XmlResponse создание ответа в виде локального файла
+// Create a response in the form of a local file.
 func FileResponse(filePath string) IResponse {
 	return &Response{Bytes: nil, Status: -1, Headers: map[string]string{"_FilePath": filePath}}
 }

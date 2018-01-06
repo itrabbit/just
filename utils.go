@@ -34,7 +34,6 @@ func topSeekReader(reader io.Reader, nopDetect bool) (int64, error) {
 	return -1, errors.New("Reader is empty")
 }
 
-// joinPaths - сложение путей
 func joinPaths(a string, b string) string {
 	if len(b) < 1 {
 		return a
@@ -46,8 +45,10 @@ func joinPaths(a string, b string) string {
 	return c
 }
 
+// H is a shortcup for map[string]interface{} (to improve code reading).
 type H map[string]interface{}
 
+// Overriding for Marshal to XML
 func (h H) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
 	start.Name = xml.Name{
 		Space: "",

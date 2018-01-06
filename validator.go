@@ -9,7 +9,7 @@ import (
 )
 
 /**
- * Примечание: валидатор опирается на паттерны регулярных выражений из роутинга (bool, int, float, uuid)
+ * Note: the validator relies on regular expression patterns of routing (bool, int, float, uuid).
  */
 
 var (
@@ -19,13 +19,13 @@ var (
 	rxValidInteger = regexp.MustCompile(patternParamInteger)
 )
 
-// ValidationError - ошибка валидации структуры
+// Structure validation errors.
 type ValidationError struct {
 	Field   string
 	Message string
 }
 
-// ValidationError::Error - текст для интерфейса ошибки
+// Validation error text.
 func (e *ValidationError) Error() string {
 	if len(e.Field) > 0 && len(e.Message) > 0 {
 		return "Invalid \"" + e.Field + "\" - " + e.Message
@@ -33,7 +33,6 @@ func (e *ValidationError) Error() string {
 	return "Unknown"
 }
 
-// parseInstruction - парсинг инструкции
 func parseInstruction(instruction string) (string, string) {
 	if start := strings.Index(instruction, "("); start > 0 {
 		if name := strings.ToLower(strings.TrimSpace(instruction[:start])); len(name) > 0 {
@@ -43,7 +42,6 @@ func parseInstruction(instruction string) (string, string) {
 	return strings.ToLower(strings.TrimSpace(instruction)), ""
 }
 
-// validationInt - валидация целого числа
 func validationInt(i int64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -61,7 +59,6 @@ func validationInt(i int64, instruction string) error {
 	return nil
 }
 
-// validationUnsignedInt - валидация целого беззнакового числа
 func validationUnsignedInt(i uint64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -79,7 +76,6 @@ func validationUnsignedInt(i uint64, instruction string) error {
 	return nil
 }
 
-// validationFloat - валидация дробного числа
 func validationFloat(f float64, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 && len(value) > 0 {
 		if name[0] == 'm' {
@@ -97,7 +93,6 @@ func validationFloat(f float64, instruction string) error {
 	return nil
 }
 
-// validationString - валидация строки
 func validationString(str string, instruction string) error {
 	if name, value := parseInstruction(instruction); len(name) > 0 {
 		switch name {
@@ -128,7 +123,7 @@ func validationString(str string, instruction string) error {
 	return nil
 }
 
-// Validation - валидация структуры объекта
+// Validation of the structure of the object according to the parameters within the tags.
 func Validation(obj interface{}) []error {
 	var result []error = nil
 	if obj != nil {

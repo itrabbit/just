@@ -21,7 +21,7 @@ type User struct {
 	UpdatedAt time.Time    `json:"update_at" group:"private" exclude:"equal:CreatedAt"`
 }
 
-func main() {
+func ExampleFinalizers() {
 	// Создаем чистое приложение (без сериализаторов и шаблонизаторов)
 	app := just.NewClear()
 

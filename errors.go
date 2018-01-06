@@ -2,7 +2,7 @@ package just
 
 import "encoding/xml"
 
-// ErrorCause причина позникновения ошибки
+// Reason struct for error.
 type ErrorCause struct {
 	XMLName     xml.Name `json:"-" xml:"cause"`
 	Path        string   `json:"path,omitempty" xml:"path,attr,omitempty"`
@@ -10,7 +10,7 @@ type ErrorCause struct {
 	Description string   `json:"desc,omitempty" xml:"desc,omitempty"`
 }
 
-// Error ошибка
+// Error struct.
 type Error struct {
 	XMLName  xml.Name     `json:"-" xml:"error"`
 	Code     string       `json:"code,omitempty" xml:"code,attr,omitempty"`
@@ -19,12 +19,12 @@ type Error struct {
 	Metadata H            `json:"metadata,omitempty" xml:"metadata,omitempty"`
 }
 
-// Error описание ошибки для интерфейса ошибок в Go
+// Text error.
 func (e *Error) Error() string {
 	return e.Message
 }
 
-// AddCause добавляет причину возникновения ошибки
+// Adds cause of errors.
 func (e *Error) AddCause(target, path, desc string) *Error {
 	if e.Causes == nil {
 		e.Causes = make([]ErrorCause, 0)
@@ -37,12 +37,13 @@ func (e *Error) AddCause(target, path, desc string) *Error {
 	return e
 }
 
+// Set metadata to error.
 func (e *Error) SetMetadata(meta H) *Error {
 	e.Metadata = meta
 	return e
 }
 
-// NewError метод быстрого создания ошибки
+// Method of quickly creating errors.
 func NewError(code, msg string) *Error {
 	return &Error{
 		Code:    code,

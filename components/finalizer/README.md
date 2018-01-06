@@ -15,8 +15,8 @@ package main
 
 import (
 	"time"
-	"github.com/itrabbit/just"
-	"github.com/itrabbit/just/components/cors"
+	
+	"github.com/itrabbit/just"	
 	"github.com/itrabbit/just/components/finalizer"
 )
 
@@ -34,18 +34,11 @@ type User struct {
 }
 
 func main() {
-	// Создаем чистое приложение (без сериализаторов и шаблонизаторов)
-	a := just.NewClear()
+	// Создаем приложение
+	a := just.New()
 	
-	// Добавляем необходимые сериализаторы
-	a.SerializerManager().
-		SetSerializer("json", []string{
-			"application/json",
-		}, finalizer.NewJsonSerializer("utf-8")).
-		SetSerializer("xml", []string{
-    		"text/xml",
-    		"application/xml",
-    	}, finalizer.NewXmlSerializer("utf-8"))	
+	// Производим замену стандартных сериализаторов
+	finalizer.ReplaceSerializers(a)	
     
     // Обработка GET запроса
     a.GET("/{group:enum(public,private)}", func(c *just.Context) just.IResponse {
@@ -64,7 +57,7 @@ func main() {
     		    ))
     })
  
-    // Запускаем приложеие
+    // Запускаем приложение
     a.Run(":80")
 }
 ```

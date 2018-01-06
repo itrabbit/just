@@ -8,19 +8,22 @@ import (
 	"net/url"
 )
 
-/** JSON Serializer */
-
+// Base JSON serializer.
 type JsonSerializer struct {
-	Charset string
+	Ch string // Charset for generate Content-Type header.
 }
 
 func (JsonSerializer) Name() string {
 	return "json"
 }
 
+func (s JsonSerializer) Charset() string {
+	return s.Ch
+}
+
 func (s JsonSerializer) DefaultContentType(withCharset bool) string {
-	if withCharset && len(s.Charset) > 0 {
-		return "application/json; charset=" + s.Charset
+	if withCharset && len(s.Ch) > 0 {
+		return "application/json; charset=" + s.Ch
 	}
 	return "application/json"
 }
@@ -51,19 +54,22 @@ func (s JsonSerializer) Response(status int, data interface{}) IResponse {
 	}
 }
 
-/** XML Serializer */
-
+// Base XML serializer.
 type XmlSerializer struct {
-	Charset string
+	Ch string // Charset for generate Content-Type header.
 }
 
 func (XmlSerializer) Name() string {
 	return "xml"
 }
 
+func (s XmlSerializer) Charset() string {
+	return s.Ch
+}
+
 func (s XmlSerializer) DefaultContentType(withCharset bool) string {
-	if withCharset && len(s.Charset) > 0 {
-		return "application/xml; charset=" + s.Charset
+	if withCharset && len(s.Ch) > 0 {
+		return "application/xml; charset=" + s.Ch
 	}
 	return "application/xml"
 }
@@ -94,24 +100,27 @@ func (s XmlSerializer) Response(status int, data interface{}) IResponse {
 	}
 }
 
-/** Form Serializer */
-
 const (
 	defaultMaxMultipartSize = 32 << 20
 	defaultMaxUrlSize       = 10 << 20
 )
 
+// Form serializer (form-data, x-www-form-urlencoded).
 type FormSerializer struct {
-	Charset string
+	Ch string
 }
 
 func (FormSerializer) Name() string {
 	return "form"
 }
 
+func (s FormSerializer) Charset() string {
+	return s.Ch
+}
+
 func (s FormSerializer) DefaultContentType(withCharset bool) string {
-	if withCharset && len(s.Charset) > 0 {
-		return "application/x-www-form-urlencoded; charset=" + s.Charset
+	if withCharset && len(s.Ch) > 0 {
+		return "application/x-www-form-urlencoded; charset=" + s.Ch
 	}
 	return "application/x-www-form-urlencoded"
 }

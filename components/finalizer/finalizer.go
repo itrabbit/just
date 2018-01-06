@@ -60,7 +60,6 @@ func indexOfStrings(list []string, x string) int {
 	return -1
 }
 
-// fieldOptions параметры финализации для поля
 type fieldOptions struct {
 	Name              string
 	Export            string
@@ -76,7 +75,6 @@ func (o *fieldOptions) SetExcludeConditions(toFieldName string, opID int) {
 	o.ExcludeConditions[toFieldName] = opID
 }
 
-// parseFieldTags парсинг тегов поля структуры модели
 func parseFieldTags(encTagName string, field *reflect.StructField, groups ...string) *fieldOptions {
 	options := &fieldOptions{}
 	// 1. Определяемся с параметром пропуска значения
@@ -137,7 +135,7 @@ func parseFieldTags(encTagName string, field *reflect.StructField, groups ...str
 	return options
 }
 
-// Финализация объектов моделей данных под определенный вывод в сериализатор
+// Finalization of objects for a particular data model output to the serializer.
 func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 	// TODO: Оптимизировать в будущем
 	val := reflect.Indirect(reflect.ValueOf(v))

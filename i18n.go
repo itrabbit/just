@@ -5,13 +5,15 @@ import (
 	"sync"
 )
 
+// Translation map for one language.
 type TranslationMap map[string]string
 
+// Translator interface.
 type ITranslator interface {
 	DefaultLocale() string
 	SetDefaultLocale(locale string) ITranslator
 	AddTranslationMap(locale string, m TranslationMap) ITranslator
-	Trans(locale string, message string, vars ...interface{}) string
+	Trans(locale string, message string, vars ...interface{}) string // Translate text for locale and vars.
 }
 
 type baseTranslator struct {

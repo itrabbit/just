@@ -26,7 +26,7 @@ type JsonSerializer struct {
 }
 
 func NewJsonSerializer(charset string) just.ISerializer {
-	return &JsonSerializer{just.JsonSerializer{Charset: charset}}
+	return &JsonSerializer{just.JsonSerializer{Ch: charset}}
 }
 
 func (s JsonSerializer) Serialize(v interface{}) ([]byte, error) {
@@ -56,7 +56,7 @@ type XmlSerializer struct {
 }
 
 func NewXmlSerializer(charset string) just.ISerializer {
-	return &XmlSerializer{just.XmlSerializer{Charset: charset}}
+	return &XmlSerializer{just.XmlSerializer{Ch: charset}}
 }
 
 func (s XmlSerializer) Serialize(v interface{}) ([]byte, error) {
@@ -85,4 +85,22 @@ func (s XmlSerializer) Response(status int, data interface{}) just.IResponse {
 		Bytes:   b,
 		Headers: map[string]string{"Content-Type": s.DefaultContentType(true)},
 	}
+}
+
+// Replace default JSON/XML serializers in JUST application on the other finalizer serializers
+func ReplaceSerializers(app just.IApplication) just.IApplication {
+	if m := app.SerializerManager(); m != nil {
+		if s := m.Serializer("json", false); s != nil {
+			m.SetSerializer("json", []string{
+				"application/json",
+			}, NewJsonSerializer(s.Charset()))
+		}
+		if s := m.Serializer("xml", false); s != nil {
+			m.SetSerializer("xml", []string{
+				"text/xml",
+				"application/xml",
+			}, NewXmlSerializer(s.Charset()))
+		}
+	}
+	return app
 }

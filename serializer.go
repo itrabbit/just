@@ -4,19 +4,23 @@ import (
 	"sync"
 )
 
+// Input interface serializer.
 type ISerializeInput interface {
 	Data() interface{}
 	Options() interface{}
 }
 
+// Serializer interface.
 type ISerializer interface {
-	Name() string
-	DefaultContentType(withCharset bool) string
-	Serialize(interface{}) ([]byte, error)
-	Deserialize([]byte, interface{}) error
-	Response(status int, data interface{}) IResponse
+	Name() string                                    // Name serializer.
+	Charset() string                                 // Get Charset serializer.
+	DefaultContentType(withCharset bool) string      // The default content type.
+	Serialize(interface{}) ([]byte, error)           // Serialize obj/objs to bytes.
+	Deserialize([]byte, interface{}) error           // Deserialize bytes tp obj/objs.
+	Response(status int, data interface{}) IResponse // Serialize obj/objs to IResponse.
 }
 
+// Serializer manager interface to manage the serializers.
 type ISerializerManager interface {
 	Names() []string
 	DefaultName() (string, bool)
@@ -25,7 +29,6 @@ type ISerializerManager interface {
 	Serializer(n string, byContent bool) ISerializer
 }
 
-// serializerManager менеджер сериализаторов
 type serializerManager struct {
 	sync.RWMutex
 	nameDefaultSerializer string

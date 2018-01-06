@@ -23,23 +23,24 @@ const (
 	patternParamUUID    = "([a-fA-F0-9]{8}-?[a-f0-9]{4}-?[1-5][a-fA-F0-9]{3}-?[89abAB][a-fA-F0-9]{3}-?[a-fA-F0-9]{12})"
 )
 
-// HandlerFunc - метод обработки запроса или middleware
+// Method of processing a request or middleware.
 type HandlerFunc func(*Context) IResponse
 
+// Interface information on route.
 type IRouteInfo interface {
 	BasePath() string
 	CountHandlers() int
 	HandlerByIndex(index int) (HandlerFunc, bool)
 }
 
-// IRoute - интерфейс роута
+// Route interface.
 type IRoute interface {
 	IRouteInfo
 
-	// Использовать middleware
+	// Use middleware.
 	Use(...HandlerFunc) IRoute
 
-	// Обработка запросов к приложению сервера
+	// Processing of requests to the application server.
 	Handle(string, string, ...HandlerFunc) IRoute
 	ANY(string, ...HandlerFunc) IRoute
 	GET(string, ...HandlerFunc) IRoute
@@ -58,21 +59,21 @@ type IRoute interface {
 	CheckPath(string) (map[string]string, bool)
 }
 
-// IRouter - интерфейс роутера
+// Router interface.
 type IRouter interface {
 	IRoute
 	Group(string, ...HandlerFunc) IRouter
 }
 
-// Router - роутер
+// Base Router struct.
 type Router struct {
-	basePath        string              // Путь который обрабатываем роут
-	rxPath          *regexp.Regexp      // Регулярное выражение для проверки пути
-	handlers        []HandlerFunc       // Список обработчиков, в том числе и middleware доступные в данном роуте
-	routeParamNames []string            // Список обнаруженных параметров в пути роута
-	parent          *Router             // Указатель на родительский роутер
-	groups          map[string]*Router  // Роутеры (map[relativePath]*Router)
-	routes          map[string][]IRoute // Роуты с группировкой по методу (map[httpMethod][]IRoute)
+	basePath        string              // The way that process route.
+	rxPath          *regexp.Regexp      // The regular expression used to validate the path.
+	handlers        []HandlerFunc       // The list of processors, including middleware available for this route.
+	routeParamNames []string            // A list of detected parameters in their path.
+	parent          *Router             // A pointer to the parent router.
+	groups          map[string]*Router  // Routers (map[relativePath]*Router).
+	routes          map[string][]IRoute // Routes with grouping by method (map[httpMethod][]IRoute).
 }
 
 func connectHandlersByRouter(r *Router, handlers []HandlerFunc) []HandlerFunc {
@@ -179,6 +180,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 	return r
 }
 
+// Use middleware.
 func (r *Router) Use(middleware ...HandlerFunc) IRoute {
 	if r.handlers == nil {
 		r.handlers = make([]HandlerFunc, 0)
@@ -187,6 +189,8 @@ func (r *Router) Use(middleware ...HandlerFunc) IRoute {
 	return r
 }
 
+// Create group router.
+// The group does not support regular expressions, text only.
 func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
 	group := &Router{
 		basePath:        joinPaths(r.basePath, relativePath),
@@ -204,6 +208,7 @@ func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
 	return group
 }
 
+// Create a HTTP request handler.
 func (r *Router) Handle(httpMethod, relativePath string, handlers ...HandlerFunc) IRoute {
 	if matches, err := regexp.MatchString("^[A-Z]+$", httpMethod); !matches || err != nil {
 		panic("HTTP method [" + httpMethod + "] not valid")
@@ -211,10 +216,16 @@ func (r *Router) Handle(httpMethod, relativePath string, handlers ...HandlerFunc
 	return r.handle(httpMethod, relativePath, handlers)
 }
 
+// Static serves files from the given file system root.
+// Internally a http.FileServer is used, therefore http.NotFound is used instead of the Router's NotFound handler.
+// To use the operating system's file system implementation, use:
+// `router.Static("/static", "/var/www")`
 func (r *Router) Static(relativePath, root string) IRoute {
 	return r.StaticFS(relativePath, http.Dir(root))
 }
 
+// StaticFile registers a single route in order to server a single file of the local filesystem.
+// `router.StaticFile("favicon.ico", "./resources/favicon.ico")`
 func (r *Router) StaticFile(relativePath, filePath string) IRoute {
 	handler := func(c *Context) IResponse {
 		return FileResponse(filePath)
@@ -222,6 +233,7 @@ func (r *Router) StaticFile(relativePath, filePath string) IRoute {
 	return r.GET(relativePath, handler).HEAD(relativePath, handler)
 }
 
+// StaticFS works just like `Static()` but a custom `http.FileSystem` can be used instead.
 func (r *Router) StaticFS(relativePath string, fs http.FileSystem) IRoute {
 	fileServer := http.StripPrefix(joinPaths(r.basePath, relativePath), http.FileServer(fs))
 	handler := func(c *Context) IResponse {
@@ -233,34 +245,42 @@ func (r *Router) StaticFS(relativePath string, fs http.FileSystem) IRoute {
 	return r.GET(urlPattern).HEAD(urlPattern, handler)
 }
 
+// POST is a shortcut for router.Handle("POST", path, handlers...).
 func (r *Router) POST(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("POST", relativePath, handlers)
 }
 
+// GET is a shortcut for router.Handle("GET", path, handlers...).
 func (r *Router) GET(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("GET", relativePath, handlers)
 }
 
+// DELETE is a shortcut for router.Handle("DELETE", path, handlers...).
 func (r *Router) DELETE(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("DELETE", relativePath, handlers)
 }
 
+// PATCH is a shortcut for router.Handle("PATCH", path, handlers...).
 func (r *Router) PATCH(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("PATCH", relativePath, handlers)
 }
 
+// PUT is a shortcut for router.Handle("PUT", path, handlers...).
 func (r *Router) PUT(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("PUT", relativePath, handlers)
 }
 
+// OPTIONS is a shortcut for router.Handle("OPTIONS", path, handlers...).
 func (r *Router) OPTIONS(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("OPTIONS", relativePath, handlers)
 }
 
+// HEAD is a shortcut for router.Handle("HEAD", path, handlers...).
 func (r *Router) HEAD(relativePath string, handlers ...HandlerFunc) IRoute {
 	return r.handle("HEAD", relativePath, handlers)
 }
 
+// Any registers a route that matches all the HTTP methods. GET, POST, PUT, PATCH, DELETE.
 func (r *Router) ANY(relativePath string, handlers ...HandlerFunc) IRoute {
 	r.handle("GET", relativePath, handlers)
 	r.handle("POST", relativePath, handlers)

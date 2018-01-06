@@ -35,7 +35,6 @@ func marshalUrlValues(ptr interface{}) ([]byte, error) {
 	return []byte(values.Encode()), nil
 }
 
-// mapForm - form mapping (+ multipart files support)
 func mapForm(values map[string][]string, files map[string][]*multipart.FileHeader, ptr interface{}) error {
 	return recursiveTreeMapForm(values, files, reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem())
 }

@@ -13,6 +13,7 @@ var (
 	defaultAllowMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
 )
 
+// CORS Options struct.
 type Options struct {
 	AllowOrigins     []string
 	AllowCredentials bool
@@ -22,6 +23,7 @@ type Options struct {
 	MaxAge           time.Duration
 }
 
+// CORS middleware.
 func Middleware(options Options) just.HandlerFunc {
 	if options.AllowHeaders == nil {
 		options.AllowHeaders = defaultAllowHeaders

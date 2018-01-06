@@ -3,10 +3,12 @@
 <img align="right" width="159px" src="https://raw.githubusercontent.com/itrabbit/just/master/logo.png">
 
 [![Build Status](https://travis-ci.org/itrabbit/just.svg?branch=master)](https://travis-ci.org/itrabbit/just)
+ [![CodeCov](https://codecov.io/gh/itrabbit/just/branch/master/graph/badge.svg)](https://codecov.io/gh/itrabbit/just)
+ [![GoDoc](https://godoc.org/github.com/itrabbit/just?status.svg)](https://godoc.org/github.com/itrabbit/just)
 
-JUST — веб фреймворк, написанный на Go (GoLang). Вдохновлен Gin (GoLang) и Symfony (PHP). JUST не создавался с целью обработки огромных обьемов данных и тем более опережению аналогов (Git, Iris, ...) по скорости работы. В первую очерь хочется добиться удобства и уменьшению времени разработки продуктов ;-)  
+JUST — Web application framework, written in Go (GoLang). Inspired by the Gin (GoLang) and Symfony (PHP). JUST was not created to handle the huge volume of data and the more pre-empting analogues (Git, Iris, ...). First I want to achieve comfort and ocher reducing product development time ;-)  
 
-> Ping / Pong пример
+> Ping / Pong example
 
 ```go
 package main
@@ -24,7 +26,7 @@ func main() {
 }
 ```
 
-## Тестирование производительности (на MacBook Pro 15 (2014))
+## Performance testing (on MacBook Pro 15 (2014))
 
 ```
 goos: darwin
@@ -71,29 +73,94 @@ Benchmark404Many:
  2000000	       607 ns/op	      48 B/op	       1 allocs/op
 ```
 
-## Финализация результата сериализации с фильтрацией полей
+## Serialize result finishing with filtration fields
 
-[Подробнее](/components/finalizer/README.md)
+```go
+package main
 
-## Примеры роутинга
+import (
+	"time"
+	
+	"github.com/itrabbit/just"	
+	"github.com/itrabbit/just/components/finalizer"
+)
+
+type PhoneNumber struct{
+	E164 string `json:"e164"` 
+}
+
+type User struct {
+	ID          uint64          `json:"id"`
+	Phone       *PhoneNumber    `json:"phone,omitempty" group:"private" export:"E164"`
+	CreatedAt   time.Time       `json:"created_at" group:"private"`
+	UpdatedAt   time.Time       `json:"update_at" group:"private" exclude:"equal:CreatedAt"`
+}
+
+func main() {
+	// Create new JUST application
+	a := just.New()
+	
+	// replace def serializers
+	finalizer.ReplaceSerializers(a)	
+        
+    a.GET("/{group:enum(public,private)}", func(c *just.Context) just.IResponse {
+    	now := time.Now()
+    	return c.Serializer().
+    		    Response(200, finalizer.Input(
+    		    	&User{
+    		    		ID: 1,
+    		    		Phone: &PhoneNumber{
+    		    			E164: "+79000000000",
+    		    		},
+    		    		CreatedAt: now,
+    		    		UpdatedAt: now,
+    		    	}, 
+    		    	c.ParamDef("group", "public"),
+    		    ))
+    })    
+    a.Run(":80")
+}
+```
+
+> Result GET request http://localhost/public
+
+```json
+{
+    "id": 1
+}
+```
+
+> Result GET request http://localhost/private
+
+```json
+{
+    "id": 1,
+    "phone": "+79000000000",
+    "created_at": "2017-12-11T22:23:36.709146+05:00"    
+}
+```
+
+[More info](/components/finalizer/README.md)
+
+## Routing examples
 
 ```
-// Перечисление
+// Enums
 http://localhost/api/{type:enum(object,item)}/{id:integer}
 
-// True / False ( поддерживаются значения: 0,1,t,f,true,false)
+// True / False (0,1,t,f,true,false)
 http://localhost/api/trigger/{value:boolean}
 
-// Число
+// Integer
 http://localhost/api/object/{id:integer}
 
-// Число с плавающей точкой
+// Float
 http://localhost/api/object/{id:float}
 
-// Регулярное выражение
+// Regexp
 http://localhost/api/object/{id:regexp(\\d+)}
 
-// Любая строка
+// String
 http://localhost/api/object/{name}
 
 // UUID

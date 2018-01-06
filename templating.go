@@ -7,10 +7,10 @@ import (
 	"sync"
 )
 
-// Интерфейс отрисовки шаблонов
+// Interface for rendering templates.
 type IRenderer interface {
 	DefaultContentType(withCharset bool) string
-	LoadTemplateFiles(filenames ...string) error
+	LoadTemplateFiles(fileNames ...string) error
 	LoadTemplateGlob(name, pattern string) error
 	AddFunc(name string, i interface{}) IRenderer
 	RemoveFunc(name string) IRenderer
@@ -18,12 +18,12 @@ type IRenderer interface {
 	Response(status int, name string, data interface{}) IResponse
 }
 
+// Interface Template Manager.
 type ITemplatingManager interface {
 	SetRenderer(name string, r IRenderer)
 	Renderer(name string) IRenderer
 }
 
-// templatingManager менеджер шаблонизаторов
 type templatingManager struct {
 	sync.RWMutex
 	renderers map[string]IRenderer
@@ -51,16 +51,14 @@ func (t *templatingManager) Renderer(name string) IRenderer {
 	return nil
 }
 
-/**
- * HTML шаблонизатор
- */
-
+// HTML template engine.
 type HTMLRenderer struct {
 	Charset  string
 	template *template.Template
 	funcMap  map[string]interface{}
 }
 
+// Content Type by default for HTMLRenderer.
 func (r *HTMLRenderer) DefaultContentType(withCharset bool) string {
 	if withCharset && len(r.Charset) > 0 {
 		return "text/html; charset=" + r.Charset
@@ -68,9 +66,10 @@ func (r *HTMLRenderer) DefaultContentType(withCharset bool) string {
 	return "text/html"
 }
 
-func (r *HTMLRenderer) LoadTemplateFiles(filenames ...string) error {
+// Load HTML template files.
+func (r *HTMLRenderer) LoadTemplateFiles(fileNames ...string) error {
 	if r.template == nil {
-		t, err := template.ParseFiles(filenames...)
+		t, err := template.ParseFiles(fileNames...)
 		if err != nil {
 			return err
 		}
@@ -80,7 +79,7 @@ func (r *HTMLRenderer) LoadTemplateFiles(filenames ...string) error {
 		}
 		return nil
 	}
-	t, err := r.template.ParseFiles(filenames...)
+	t, err := r.template.ParseFiles(fileNames...)
 	if err != nil {
 		return err
 	}
@@ -88,6 +87,7 @@ func (r *HTMLRenderer) LoadTemplateFiles(filenames ...string) error {
 	return nil
 }
 
+// Load HTML template glob.
 func (r *HTMLRenderer) LoadTemplateGlob(name, pattern string) error {
 	if r.template == nil {
 		t, err := template.New(name).ParseGlob(pattern)
@@ -108,6 +108,7 @@ func (r *HTMLRenderer) LoadTemplateGlob(name, pattern string) error {
 	return nil
 }
 
+// Add Func to HTML templates.
 func (r *HTMLRenderer) AddFunc(name string, i interface{}) IRenderer {
 	if r.funcMap == nil {
 		r.funcMap = make(map[string]interface{})
@@ -118,6 +119,8 @@ func (r *HTMLRenderer) AddFunc(name string, i interface{}) IRenderer {
 	}
 	return r
 }
+
+// Remove Func from HTML templates.
 func (r *HTMLRenderer) RemoveFunc(name string) IRenderer {
 	if r.funcMap != nil {
 		delete(r.funcMap, name)
@@ -128,6 +131,7 @@ func (r *HTMLRenderer) RemoveFunc(name string) IRenderer {
 	return r
 }
 
+// Render HTML to bytes.
 func (r *HTMLRenderer) Render(name string, data interface{}) ([]byte, error) {
 	if r.template == nil {
 		return nil, errors.New("Have hot templates")
@@ -139,6 +143,7 @@ func (r *HTMLRenderer) Render(name string, data interface{}) ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
+// Response from HTML template.
 func (r *HTMLRenderer) Response(status int, name string, data interface{}) IResponse {
 	if b, err := r.Render(name, data); err == nil {
 		return &Response{

@@ -50,8 +50,6 @@ func BenchmarkOneRouteJSON(B *testing.B) {
 	runRequest("BenchmarkOneRouteJSON", B, app, "GET", "/json")
 }
 
-var htmlContentType = []string{"text/html; charset=utf-8"}
-
 func BenchmarkOneRouteHTML(B *testing.B) {
 	app := New()
 	app.TemplatingManager().Renderer("html").LoadTemplateGlob("index", "<html><body><h1>{{.}}</h1></body></html>")
@@ -137,7 +135,6 @@ func (m *mockWriter) WriteString(s string) (n int, err error) {
 func (m *mockWriter) WriteHeader(int) {}
 
 func runRequest(name string, B *testing.B, r IApplication, method, path string) {
-	// create fake request
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
 		panic(err)

@@ -17,23 +17,17 @@ type PhoneNumber struct {
 type User struct {
 	ID        uint64       `json:"id"`
 	Phone     *PhoneNumber `json:"phone,omitempty" group:"private" export:"E164"`
+	Text      string       `json:"text"`
 	CreatedAt time.Time    `json:"created_at" group:"private"`
 	UpdatedAt time.Time    `json:"update_at" group:"private" exclude:"equal:CreatedAt"`
 }
 
 func ExampleFinalizers() {
-	// Создаем чистое приложение (без сериализаторов и шаблонизаторов)
-	app := just.NewClear()
+	// Создаем приложение
+	app := just.New()
 
 	// Добавляем необходимые сериализаторы
-	app.SerializerManager().
-		SetSerializer("json", []string{
-			"application/json",
-		}, finalizer.NewJsonSerializer("utf-8")).
-		SetSerializer("xml", []string{
-			"text/xml",
-			"application/xml",
-		}, finalizer.NewXmlSerializer("utf-8"))
+	finalizer.ReplaceSerializers(app)
 
 	// Добавляем поддержку CORS
 	app.Use(cors.Middleware(cors.Options{
@@ -51,7 +45,8 @@ func ExampleFinalizers() {
 		return c.Serializer().
 			Response(200, finalizer.Input(
 				&User{
-					ID: 1,
+					ID:   1,
+					Text: c.Tr("Hello World"),
 					Phone: &PhoneNumber{
 						E164: "+79000000000",
 					},

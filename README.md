@@ -176,3 +176,7 @@ http://localhost/api/object/{uuid:uuid}
 `XRP: rEQwgdCr8Jma3GY2s55SLoZq2jmqmWUBDY`
 
 `PayPal / Yandex Money: garin1221@yandex.ru`
+
+## License
+
+JUST is licensed under the [MIT](LICENSE).

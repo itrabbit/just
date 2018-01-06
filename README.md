@@ -72,18 +72,15 @@ func loadTranslations(t just.ITranslator) {
 ```go
 package main
 
-import (
-	"github.com/itrabbit/just"
-)
+import "github.com/itrabbit/just"
 
 func main() {
-	// Создаем приложение
+	// Create app
 	app := just.New()
 
-	// Загружаем перевод
+	// Use i18n.go
 	loadTranslations(app.Translator())
-
-	// Обработка GET запроса
+    
 	app.GET("", func(c *just.Context) just.IResponse {
 		return c.Serializer().
 			Response(200, &just.H{
@@ -91,8 +88,6 @@ func main() {
 				"payload": c.Tr("Payload"),
 			})
 	})
-
-	// Запускаем приложеие
 	app.Run(":8081")
 }
 ```

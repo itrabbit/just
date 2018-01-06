@@ -183,8 +183,8 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 						}
 						if len(options.Export) > 0 {
 							if indFieldVal := reflect.Indirect(fieldVal); indFieldVal.IsValid() {
-								// TODO: Добавить возможности экспорта для списка
-								if indFieldVal.Type().Kind() == reflect.Struct {
+								expKind := indFieldVal.Type().Kind()
+								if expKind == reflect.Struct {
 									if subField, ok := indFieldVal.Type().FieldByName(options.Export); ok {
 										subFieldVal := indFieldVal.FieldByName(options.Export)
 										if options.Omitempty && isEmptyValue(subFieldVal) {
@@ -195,6 +195,24 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 										} else if !options.Omitempty {
 											m[options.Name] = nil
 										}
+									}
+								} else if expKind == reflect.Slice || expKind == reflect.Array {
+									arr := make([]interface{}, 0)
+									for index := 0; index < indFieldVal.Len(); index++ {
+										if itemVal := reflect.Indirect(indFieldVal.Index(index)); itemVal.Type().Kind() == reflect.Struct {
+											if subField, ok := itemVal.Type().FieldByName(options.Export); ok {
+												subFieldVal := itemVal.FieldByName(options.Export)
+												if options.Omitempty && isEmptyValue(subFieldVal) {
+													continue
+												}
+												if !subField.Anonymous && checkExportedInterface(subFieldVal) {
+													arr = append(arr, Finalize(encTagName, subFieldVal.Interface(), groups...))
+												}
+											}
+										}
+									}
+									if len(arr) > 0 || options.Omitempty {
+										m[options.Name] = arr
 									}
 								}
 							}

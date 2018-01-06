@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Request Context struct.
@@ -280,6 +281,96 @@ func (c *Context) Get(key string) (value interface{}, ok bool) {
 // Get metadata by key with default value.
 func (c *Context) GetDef(key string, def interface{}) interface{} {
 	if value, ok := c.Get(key); ok {
+		return value
+	}
+	return def
+}
+
+// Get bool metadata by key.
+func (c *Context) GetBool(key string) (value bool, ok bool) {
+	if c.Meta != nil {
+		if i, ok := c.Meta[key]; ok && i != nil {
+			value, ok = i.(bool)
+		}
+	}
+	return
+}
+
+// Get bool metadata by key with default value.
+func (c *Context) GetBoolDef(key string, def bool) bool {
+	if value, ok := c.GetBool(key); ok {
+		return value
+	}
+	return def
+}
+
+// Get string metadata by key.
+func (c *Context) GetStr(key string) (value string, ok bool) {
+	if c.Meta != nil {
+		if i, ok := c.Meta[key]; ok && i != nil {
+			value, ok = i.(string)
+		}
+	}
+	return
+}
+
+// Get string metadata by key with default value.
+func (c *Context) GetStrDef(key string, def string) string {
+	if value, ok := c.GetStr(key); ok {
+		return value
+	}
+	return def
+}
+
+// Get duration metadata by key.
+func (c *Context) GetDuration(key string) (value time.Duration, ok bool) {
+	if c.Meta != nil {
+		if i, ok := c.Meta[key]; ok && i != nil {
+			value, ok = i.(time.Duration)
+		}
+	}
+	return
+}
+
+// Get duration metadata by key with default value.
+func (c *Context) GetDurationDef(key string, def time.Duration) time.Duration {
+	if value, ok := c.GetDuration(key); ok {
+		return value
+	}
+	return def
+}
+
+// Get integer metadata by key.
+func (c *Context) GetInt(key string) (value int64, ok bool) {
+	if c.Meta != nil {
+		if i, ok := c.Meta[key]; ok && i != nil {
+			value, ok = i.(int64)
+		}
+	}
+	return
+}
+
+// Get integer metadata by key with default value.
+func (c *Context) GetIntDef(key string, def int64) int64 {
+	if value, ok := c.GetInt(key); ok {
+		return value
+	}
+	return def
+}
+
+// Get integer metadata by key.
+func (c *Context) GetFloat(key string) (value float64, ok bool) {
+	if c.Meta != nil {
+		if i, ok := c.Meta[key]; ok && i != nil {
+			value, ok = i.(float64)
+		}
+	}
+	return
+}
+
+// Get float metadata by key with default value.
+func (c *Context) GetFloatDef(key string, def float64) float64 {
+	if value, ok := c.GetFloat(key); ok {
 		return value
 	}
 	return def

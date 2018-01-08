@@ -62,6 +62,7 @@ func indexOfStrings(list []string, x string) int {
 
 type fieldOptions struct {
 	Name              string
+	Group             string
 	Export            string
 	Omitempty         bool
 	Skip              bool
@@ -119,7 +120,9 @@ func parseFieldTags(encTagName string, field *reflect.StructField, groups ...str
 	}
 	// 3. Получаем поле для экспорта внутреннего значения, если оно указано
 	options.Export = strings.TrimSpace(field.Tag.Get("export"))
-	// 4. Получаем данные для условий исключения
+	// 4. Получаем указания для группысвнутренней финализации
+	options.Group = strings.TrimSpace(field.Tag.Get("bygroup"))
+	// 5. Получаем данные для условий исключения
 	for _, exclude := range strings.Split(strings.TrimSpace(field.Tag.Get("exclude")), ";") {
 		params := strings.Split(exclude, ":")
 		if len(params) > 1 {
@@ -191,7 +194,11 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 											continue
 										}
 										if !subField.Anonymous && checkExportedInterface(subFieldVal) {
-											m[options.Name] = Finalize(encTagName, subFieldVal.Interface(), groups...)
+											if len(options.Group) > 0 {
+												m[options.Name] = Finalize(encTagName, subFieldVal.Interface(), options.Group)
+											} else {
+												m[options.Name] = Finalize(encTagName, subFieldVal.Interface(), groups...)
+											}
 										} else if !options.Omitempty {
 											m[options.Name] = nil
 										}
@@ -206,7 +213,11 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 													continue
 												}
 												if !subField.Anonymous && checkExportedInterface(subFieldVal) {
-													arr = append(arr, Finalize(encTagName, subFieldVal.Interface(), groups...))
+													if len(options.Group) > 0 {
+														arr = append(arr, Finalize(encTagName, subFieldVal.Interface(), options.Group))
+													} else {
+														arr = append(arr, Finalize(encTagName, subFieldVal.Interface(), groups...))
+													}
 												}
 											}
 										}
@@ -219,7 +230,11 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 							continue
 						}
 						if checkExportedInterface(fieldVal) {
-							m[options.Name] = Finalize(encTagName, fieldVal.Interface(), groups...)
+							if len(options.Group) > 0 {
+								m[options.Name] = Finalize(encTagName, fieldVal.Interface(), options.Group)
+							} else {
+								m[options.Name] = Finalize(encTagName, fieldVal.Interface(), groups...)
+							}
 						} else if !options.Omitempty {
 							m[options.Name] = nil
 						}

@@ -9,8 +9,16 @@ import (
 )
 
 var (
-	defaultAllowHeaders = []string{"Origin", "Accept", "Content-Type", "Authorization", "X-Auth", "X-Scheme", "X-Real-Ip", "X-Forwarded-For", "X-Forwarded-Proto", "Token"}
-	defaultAllowMethods = []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
+	defaultAllowHeaders = []string{
+		"Origin", "Accept", "Content-Type",
+		"Authorization", "X-Auth", "X-Scheme",
+		"X-Real-Ip", "X-Forwarded-For", "X-Forwarded-Proto",
+		"Token", "Connection", "Upgrade", "Sec-Websocket-Version",
+		"Sec-Websocket-Key", "Sec-Websocket-Protocol", "Sec-Websocket-Accept",
+	}
+	defaultAllowMethods = []string{
+		"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS",
+	}
 )
 
 // CORS Options struct.

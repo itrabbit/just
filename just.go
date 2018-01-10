@@ -276,7 +276,7 @@ func SetDefSerializers(app IApplication) IApplication {
 	}, &XmlSerializer{Ch: "utf-8"}).SetSerializer("form", []string{
 		"multipart/form-data",
 		"application/x-www-form-urlencoded",
-	}, &FormSerializer{Ch: "utf-8"}).SetDefaultName("json")
+	}, &FormSerializer{Ch: "utf-8", OnlyDeserialize: true}).SetDefaultName("json")
 	return app
 }
 

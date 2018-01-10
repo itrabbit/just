@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"mime/multipart"
 	"net/url"
 )
@@ -107,7 +108,8 @@ const (
 
 // Form serializer (form-data, x-www-form-urlencoded).
 type FormSerializer struct {
-	Ch string
+	Ch              string
+	OnlyDeserialize bool
 }
 
 func (FormSerializer) Name() string {
@@ -125,7 +127,10 @@ func (s FormSerializer) DefaultContentType(withCharset bool) string {
 	return "application/x-www-form-urlencoded"
 }
 
-func (FormSerializer) Serialize(v interface{}) ([]byte, error) {
+func (s FormSerializer) Serialize(v interface{}) ([]byte, error) {
+	if s.OnlyDeserialize {
+		return nil, errors.New("Serialize operations disabled")
+	}
 	if input, ok := v.(ISerializeInput); ok {
 		v = input.Data()
 	}

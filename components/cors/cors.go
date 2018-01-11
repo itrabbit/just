@@ -61,6 +61,17 @@ func Middleware(options Options) just.HandlerFunc {
 			if options.MaxAge > time.Duration(0) {
 				headers["Access-Control-Max-Age"] = strconv.FormatInt(int64(options.MaxAge/time.Second), 10)
 			}
+			if len(options.AllowOrigins) > 0 {
+				headers["Access-Control-Allow-Origin"] = strings.Join(options.AllowOrigins, " ")
+			} else {
+				headers["Access-Control-Allow-Origin"] = origin
+			}
+			if options.AllowCredentials {
+				headers["Access-Control-Allow-Credentials"] = "true"
+			}
+			if len(options.ExposeHeaders) > 0 {
+				headers["Access-Control-Expose-Headers"] = strings.Join(options.ExposeHeaders, ",")
+			}
 			return &just.Response{
 				Status:  200,
 				Bytes:   nil,

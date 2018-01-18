@@ -26,7 +26,7 @@ type testStruct1 struct {
 
 func TestJsonSerializer_Serialize(t *testing.T) {
 	// Отключаем режим отладки
-	// just.SetDebugMode(false)
+	just.SetDebugMode(false)
 
 	users := make([]*testStruct1, 10, 10)
 	now := time.Unix(1024, 0)
@@ -79,6 +79,45 @@ func TestXmlSerializer_Serialize(t *testing.T) {
 	d, err := s.Serialize(Input(users, "moderate"))
 	if err != nil {
 		t.Error(err)
+		return
+	}
+	if bytes.Index(d, []byte("value")) > 0 {
+		t.Fail()
+		return
+	}
+	if bytes.Index(d, []byte("updated_at")) > 0 {
+		t.Fail()
+		return
+	}
+}
+
+func TestJsonMapSerializer_Serialize(t *testing.T) {
+	// Отключаем режим отладки
+	just.SetDebugMode(false)
+
+	users := make([]interface{}, 10, 10)
+	now := time.Unix(1024, 0)
+	for i := 0; i < 10; i++ {
+		users[i] = &just.H{
+			"user": &testStruct1{
+				ID:           uint64(i + 1),
+				UUID:         "0000-0000-00000000",
+				PhoneNumber:  &testStruct0{Value: "+7900000000"},
+				PhoneNumbers: []*testStruct0{&testStruct0{Value: "+7900000000"}, &testStruct0{Value: "+7900000001"}},
+				FirstName:    "Alex",
+				LastName:     "Grimm",
+				CreatedAt:    now,
+				UpdatedAt:    now,
+			}}
+	}
+	s := NewJsonSerializer("utf-8")
+	d, err := s.Serialize(Input(users, "moderate"))
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	if bytes.Index(d, []byte("user")) <= 0 {
+		t.Fail()
 		return
 	}
 	if bytes.Index(d, []byte("value")) > 0 {

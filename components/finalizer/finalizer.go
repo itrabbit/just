@@ -243,6 +243,23 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 			}
 			return m
 		}
+	} else if kind == reflect.Map {
+		for _, key := range val.MapKeys() {
+			if elemValue := reflect.Indirect(val.MapIndex(key)); elemValue.IsValid() {
+				elemKind := elemValue.Type().Kind()
+				if elemKind == reflect.Interface ||
+					elemKind == reflect.Struct ||
+					elemKind == reflect.Slice ||
+					elemKind == reflect.Array ||
+					elemKind == reflect.Map {
+					ptr := elemValue.Interface()
+					if res := Finalize(encTagName, ptr, groups...); res != nil && res != ptr {
+						val.SetMapIndex(key, reflect.ValueOf(res))
+					}
+				}
+			}
+		}
+		return val.Interface()
 	}
 	return v
 }

@@ -250,46 +250,46 @@ func (r *Router) StaticFS(relativePath string, fs http.FileSystem) IRoute {
 
 // POST is a shortcut for router.Handle("POST", path, handlers...).
 func (r *Router) POST(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("POST", relativePath, handlers)
+	return r.handle(http.MethodPost, relativePath, handlers)
 }
 
 // GET is a shortcut for router.Handle("GET", path, handlers...).
 func (r *Router) GET(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("GET", relativePath, handlers)
+	return r.handle(http.MethodGet, relativePath, handlers)
 }
 
 // DELETE is a shortcut for router.Handle("DELETE", path, handlers...).
 func (r *Router) DELETE(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("DELETE", relativePath, handlers)
+	return r.handle(http.MethodDelete, relativePath, handlers)
 }
 
 // PATCH is a shortcut for router.Handle("PATCH", path, handlers...).
 func (r *Router) PATCH(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("PATCH", relativePath, handlers)
+	return r.handle(http.MethodPatch, relativePath, handlers)
 }
 
 // PUT is a shortcut for router.Handle("PUT", path, handlers...).
 func (r *Router) PUT(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("PUT", relativePath, handlers)
+	return r.handle(http.MethodPut, relativePath, handlers)
 }
 
 // OPTIONS is a shortcut for router.Handle("OPTIONS", path, handlers...).
 func (r *Router) OPTIONS(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("OPTIONS", relativePath, handlers)
+	return r.handle(http.MethodOptions, relativePath, handlers)
 }
 
 // HEAD is a shortcut for router.Handle("HEAD", path, handlers...).
 func (r *Router) HEAD(relativePath string, handlers ...HandlerFunc) IRoute {
-	return r.handle("HEAD", relativePath, handlers)
+	return r.handle(http.MethodHead, relativePath, handlers)
 }
 
 // Any registers a route that matches all the HTTP methods. GET, POST, PUT, PATCH, DELETE.
 func (r *Router) ANY(relativePath string, handlers ...HandlerFunc) IRoute {
-	r.handle("GET", relativePath, handlers)
-	r.handle("POST", relativePath, handlers)
-	r.handle("PUT", relativePath, handlers)
-	r.handle("PATCH", relativePath, handlers)
-	r.handle("DELETE", relativePath, handlers)
+	r.handle(http.MethodGet, relativePath, handlers)
+	r.handle(http.MethodPost, relativePath, handlers)
+	r.handle(http.MethodPut, relativePath, handlers)
+	r.handle(http.MethodPatch, relativePath, handlers)
+	r.handle(http.MethodDelete, relativePath, handlers)
 	return r
 }
 

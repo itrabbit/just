@@ -126,7 +126,7 @@ func parseFieldTags(encTagName string, field *reflect.StructField, groups ...str
 	for _, exclude := range strings.Split(strings.TrimSpace(field.Tag.Get("exclude")), ";") {
 		params := strings.Split(exclude, ":")
 		if len(params) > 1 {
-			switch strings.ToLower(strings.TrimSpace(params[0])) {
+			switch strings.TrimSpace(params[0]) {
 			case "equal":
 				options.SetExcludeConditions(strings.TrimSpace(params[1]), excludeCmEqual)
 				break

@@ -131,7 +131,7 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 									{
 										findPattern = false
 										if begin, end := strings.Index(req, "("), strings.LastIndex(req, ")"); begin > 0 && end > begin {
-											if t := strings.ToLower(strings.TrimSpace(req[:begin])); len(t) > 0 {
+											if t := strings.TrimSpace(req[:begin]); len(t) > 0 {
 												if findPattern = t == "regexp" || t == "enum"; findPattern && len(strings.TrimSpace(req[begin+1:end])) > 0 {
 													switch t {
 													case "rgx", "regexp":

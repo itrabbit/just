@@ -121,7 +121,7 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 		return
 	}
 	httpMethod, path := c.Request.Method, c.Request.URL.Path
-	if app.checkMethodForHaveBody(strings.ToUpper(httpMethod)) && c.Request.Body != nil {
+	if app.checkMethodForHaveBody(httpMethod) && c.Request.Body != nil {
 		// Преобразовываем данные
 		if b, _ := ioutil.ReadAll(c.Request.Body); len(b) > 0 {
 			c.Request.Body.Close()

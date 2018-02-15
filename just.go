@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.10"
+	Version      = "v0.0.11"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -122,7 +122,6 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 	}
 	httpMethod, path := c.Request.Method, c.Request.URL.Path
 	if app.checkMethodForHaveBody(strings.ToUpper(httpMethod)) && c.Request.Body != nil {
-		// TODO: Временное преобразование, исправить в будущем
 		// Преобразовываем данные
 		if b, _ := ioutil.ReadAll(c.Request.Body); len(b) > 0 {
 			c.Request.Body.Close()
@@ -193,6 +192,7 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 
 func (app *application) handleRouter(router *Router, httpMethod, path string, c *Context) (IResponse, bool) {
 	if router != nil {
+
 		// Поиск роута
 		if router.routes != nil && len(router.routes) > 0 {
 			if routes, ok := router.routes[httpMethod]; ok && len(routes) > 0 {

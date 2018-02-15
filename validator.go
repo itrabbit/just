@@ -13,6 +13,7 @@ import (
  */
 
 var (
+	rxValidRID     = regexp.MustCompile(patternParamRID)
 	rxValidUuid    = regexp.MustCompile(patternParamUUID)
 	rxValidFloat   = regexp.MustCompile(patternParamFloat)
 	rxValidBoolean = regexp.MustCompile(patternParamBoolean)
@@ -111,6 +112,10 @@ func validationString(str string, instruction string) error {
 		case "uuid":
 			if !rxValidUuid.MatchString(str) {
 				return errors.New("is not UUID")
+			}
+		case "rid":
+			if !rxValidRID.MatchString(str) {
+				return errors.New("is not RID")
 			}
 		case "rgx", "regexp":
 			if rx, err := regexp.Compile(value); err == nil && rx != nil {

@@ -144,15 +144,22 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 	val := reflect.Indirect(reflect.ValueOf(v))
 	kind := val.Type().Kind()
 	if kind == reflect.Array || kind == reflect.Slice {
-		list := make([]interface{}, val.Len(), val.Len())
-		for i := 0; i < val.Len(); i++ {
-			if elem := val.Index(i); elem.IsValid() {
-				list[i] = Finalize(encTagName, elem.Interface(), groups...)
-				continue
+		elemKind := val.Type().Elem().Kind()
+		if elemKind == reflect.Interface ||
+			elemKind == reflect.Struct ||
+			elemKind == reflect.Slice ||
+			elemKind == reflect.Array ||
+			elemKind == reflect.Map {
+			list := make([]interface{}, val.Len(), val.Len())
+			for i := 0; i < val.Len(); i++ {
+				if elem := val.Index(i); elem.IsValid() {
+					list[i] = Finalize(encTagName, elem.Interface(), groups...)
+					continue
+				}
+				list[i] = nil
 			}
-			list[i] = nil
+			return list
 		}
-		return list
 	} else if kind == reflect.Struct {
 		t := val.Type()
 		if !t.AssignableTo(timeType) && t.Name() != "Time" {

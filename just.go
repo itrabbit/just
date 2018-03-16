@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -138,6 +139,19 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 			writer:   w,
 		}
 	}
+	// Recover
+	defer func() {
+		if rvr := recover(); rvr != nil {
+
+			fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
+			debug.PrintStack()
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			if app.profiler != nil {
+				app.profiler.Error(errors.New("Invalid response, recover panic!"))
+			}
+		}
+	}()
 	// Выполняем handlers из роутеров
 	response, existRoute := app.handleRouter(&app.Router, httpMethod, path, c)
 	// Если ответ пустой
@@ -182,11 +196,10 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 		}
 		return
 	}
-	// Если ничего не смогли сделать, выдаем 500 ошибку
-	w.WriteHeader(500)
-	w.Write([]byte("500 - Internal Server Error.\r\nThe server could not process your request, or the response could not be sent."))
+	// Если ничего не смогли сделать, выдаем 405 ошибку
+	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	if app.profiler != nil {
-		app.profiler.Error(errors.New("Invalid response"))
+		app.profiler.Error(http.ErrNotSupported)
 	}
 }
 

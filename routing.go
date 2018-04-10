@@ -85,31 +85,19 @@ func connectHandlersByRouter(r *Router, handlers []HandlerFunc) []HandlerFunc {
 	return handlers
 }
 
-func (r *Router) handle(httpMethod string, relativePath string, handlers []HandlerFunc) IRoute {
-	if r.routes == nil {
-		r.routes = make(map[string][]IRoute)
-	}
-	if _, ok := r.routes[httpMethod]; !ok {
-		r.routes[httpMethod] = make([]IRoute, 0)
-	}
-	// Формируем условие для совпадения пути
-	basePath := joinPaths(r.basePath, relativePath)
-
-	var routeParamNames []string = nil
-	var rxPath *regexp.Regexp = nil
-
+func regularityBasePath(httpMethod, basePath string, supportEndSlash bool) (rxPath *regexp.Regexp, paramNames []string) {
 	if strings.Index(basePath, "{") >= 0 {
 		params := rxPathFindParams.FindAllStringSubmatch(basePath, -1)
 		if len(params) > 0 {
 			// Формируем полные рекомендации и по ним строим пути
-			routeParamNames = make([]string, len(params))
+			paramNames = make([]string, len(params))
 			regExpPattern := basePath
 			for i, param := range params {
 				if len(param) > 0 {
 					if len(param) > 1 {
 						// Анализ параметра
 						if pos := strings.Index(param[1], ":"); pos > 0 {
-							routeParamNames[i] = strings.TrimSpace(param[1][0:pos])
+							paramNames[i] = strings.TrimSpace(param[1][0:pos])
 							if req := strings.TrimSpace(param[1][pos+1:]); len(req) > 1 {
 								// Анализ рекомендаций параметра
 								findPattern := true
@@ -154,25 +142,54 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 								}
 							}
 						} else {
-							routeParamNames[i] = strings.TrimSpace(param[1])
+							paramNames[i] = strings.TrimSpace(param[1])
 						}
 					} else {
-						routeParamNames[i] = strings.TrimSpace(param[0])
+						paramNames[i] = strings.TrimSpace(param[0])
 					}
 					regExpPattern = strings.Replace(regExpPattern, param[0], patternParamString, 1)
 				}
 			}
 			var err error
 			if IsDebug() {
-				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern, routeParamNames)
+				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern, paramNames)
 			}
-			rxPath, err = regexp.Compile("^" + regExpPattern + "$")
+			var end string
+			if supportEndSlash {
+				end = "(\\/)?$"
+			} else {
+				end = "$"
+			}
+			rxPath, err = regexp.Compile("^" + regExpPattern + end)
 			if err != nil {
 				panic(err)
 			}
 		}
 	} else if IsDebug() {
 		fmt.Println("[DEBUG] Registration", httpMethod, "route:", basePath)
+	}
+	return
+}
+
+func (r *Router) handle(httpMethod string, relativePath string, handlers []HandlerFunc) IRoute {
+	if r.routes == nil {
+		r.routes = make(map[string][]IRoute)
+	}
+	if _, ok := r.routes[httpMethod]; !ok {
+		r.routes[httpMethod] = make([]IRoute, 0)
+	}
+	var (
+		basePath        string
+		rxPath          *regexp.Regexp
+		routeParamNames []string
+	)
+	if len(relativePath) < 1 || relativePath == "/" {
+		rxPath = r.rxPath
+		basePath = r.basePath
+		routeParamNames = r.routeParamNames
+	} else {
+		basePath = joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
+		rxPath, routeParamNames = regularityBasePath(httpMethod, basePath, false)
 	}
 	r.routes[httpMethod] = append(r.routes[httpMethod], &Router{
 		basePath:        basePath,
@@ -198,11 +215,17 @@ func (r *Router) Use(middleware ...HandlerFunc) IRoute {
 // Create group router.
 // The group does not support regular expressions, text only.
 func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
+	if len(relativePath) < 1 || relativePath == "/" {
+		panic(fmt.Errorf("the group cannot be empty"))
+		return nil
+	}
+	basePath := joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
+	rxPath, routeParamNames := regularityBasePath("GROUP", basePath, true)
 	group := &Router{
-		basePath:        joinPaths(r.basePath, relativePath),
-		rxPath:          nil, // TODO: Пока роутер не может иметь параметры в пути
+		basePath:        basePath,
+		rxPath:          rxPath,
 		handlers:        connectHandlersByRouter(r, handlers),
-		routeParamNames: nil,
+		routeParamNames: routeParamNames,
 		parent:          r,
 		groups:          nil,
 		routes:          nil,

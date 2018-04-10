@@ -13,11 +13,12 @@ import (
  */
 
 var (
-	rxValidRID     = regexp.MustCompile(patternParamRID)
-	rxValidUuid    = regexp.MustCompile(patternParamUUID)
-	rxValidFloat   = regexp.MustCompile(patternParamFloat)
-	rxValidBoolean = regexp.MustCompile(patternParamBoolean)
-	rxValidInteger = regexp.MustCompile(patternParamInteger)
+	rxValidRID     = regexp.MustCompile("^" + patternParamRID + "$")
+	rxValidUuid    = regexp.MustCompile("^" + patternParamUUID + "$")
+	rxValidFloat   = regexp.MustCompile("^" + patternParamFloat + "$")
+	rxValidBoolean = regexp.MustCompile("^" + patternParamBoolean + "$")
+	rxValidInteger = regexp.MustCompile("^" + patternParamInteger + "$")
+	rxValidHex     = regexp.MustCompile("^" + patternHex + "$")
 )
 
 // Structure validation errors.
@@ -108,6 +109,10 @@ func validationString(str string, instruction string) error {
 		case "float", "number", "f":
 			if !rxValidFloat.MatchString(str) {
 				return errors.New("is not float")
+			}
+		case "hex":
+			if !rxValidHex.MatchString(str) {
+				return errors.New("is not HEX")
 			}
 		case "uuid":
 			if !rxValidUuid.MatchString(str) {

@@ -22,6 +22,7 @@ const (
 	patternParamBoolean = "(1|0|t|f|true|false|T|F|TRUE|FALSE)"
 	patternParamUUID    = "([a-fA-F0-9]{8}-?[a-f0-9]{4}-?[1-5][a-fA-F0-9]{3}-?[89abAB][a-fA-F0-9]{3}-?[a-fA-F0-9]{12})"
 	patternParamRID     = "([0-9a-z]{20})"
+	patternHex          = "((0[xX])?[0-9a-fA-F]+)"
 )
 
 // Method of processing a request or middleware.
@@ -115,6 +116,8 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 								switch req {
 								case "p", "path":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamPath, 1)
+								case "hex":
+									regExpPattern = strings.Replace(regExpPattern, param[0], patternHex, 1)
 								case "rid":
 									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamRID, 1)
 								case "uuid":

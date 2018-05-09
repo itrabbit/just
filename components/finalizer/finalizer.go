@@ -260,7 +260,7 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 					elemKind == reflect.Array ||
 					elemKind == reflect.Map {
 					ptr := elemValue.Interface()
-					if res := Finalize(encTagName, ptr, groups...); res != nil && res != ptr {
+					if res := Finalize(encTagName, ptr, groups...); res != nil {
 						val.SetMapIndex(key, reflect.ValueOf(res))
 					}
 				}

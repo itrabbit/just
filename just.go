@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version      = "v0.0.11"
+	Version      = "v0.1.12"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -205,7 +205,6 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 
 func (app *application) handleRouter(router *Router, httpMethod, path string, c *Context) (IResponse, bool) {
 	if router != nil {
-
 		// Поиск роута
 		if router.routes != nil && len(router.routes) > 0 {
 			if routes, ok := router.routes[httpMethod]; ok && len(routes) > 0 {
@@ -219,7 +218,11 @@ func (app *application) handleRouter(router *Router, httpMethod, path string, c 
 		// Поиск следующего роутера
 		if router.groups != nil && len(router.groups) > 0 {
 			for relativePath, r := range router.groups {
-				if strings.Index(path, joinPaths(router.basePath, relativePath)) >= 0 {
+				if strings.Index(relativePath, "{") >= 0 && r.rxPath != nil {
+					if _, ok := r.CheckPath(path); ok {
+						return app.handleRouter(r, httpMethod, path, c)
+					}
+				} else if strings.Index(path, joinPaths(router.basePath, relativePath)) >= 0 {
 					return app.handleRouter(r, httpMethod, path, c)
 				}
 			}

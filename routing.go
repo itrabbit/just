@@ -85,88 +85,88 @@ func connectHandlersByRouter(r *Router, handlers []HandlerFunc) []HandlerFunc {
 	return handlers
 }
 
-func regularityBasePath(httpMethod, basePath string, supportEndSlash bool) (rxPath *regexp.Regexp, paramNames []string) {
-	if strings.Index(basePath, "{") >= 0 {
-		params := rxPathFindParams.FindAllStringSubmatch(basePath, -1)
-		if len(params) > 0 {
-			// Формируем полные рекомендации и по ним строим пути
-			paramNames = make([]string, len(params))
-			regExpPattern := basePath
-			for i, param := range params {
-				if len(param) > 0 {
-					if len(param) > 1 {
-						// Анализ параметра
-						if pos := strings.Index(param[1], ":"); pos > 0 {
-							paramNames[i] = strings.TrimSpace(param[1][0:pos])
-							if req := strings.TrimSpace(param[1][pos+1:]); len(req) > 1 {
-								// Анализ рекомендаций параметра
-								findPattern := true
-								switch req {
-								case "p", "path":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamPath, 1)
-								case "hex":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternHex, 1)
-								case "rid":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamRID, 1)
-								case "uuid":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamUUID, 1)
-								case "i", "int", "integer":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamInteger, 1)
-								case "f", "number", "float":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFloat, 1)
-								case "b", "bool", "boolean":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamBoolean, 1)
-								case "f.e", "file.ext":
-									regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFileExt, 1)
-								default:
-									{
-										findPattern = false
-										if begin, end := strings.Index(req, "("), strings.LastIndex(req, ")"); begin > 0 && end > begin {
-											if t := strings.TrimSpace(req[:begin]); len(t) > 0 {
-												if findPattern = t == "regexp" || t == "enum"; findPattern && len(strings.TrimSpace(req[begin+1:end])) > 0 {
-													switch t {
-													case "rgx", "regexp":
-														regExpPattern = strings.Replace(regExpPattern, param[0], strings.TrimSpace(req[begin:]), 1)
-													case "e", "enum":
-														regExpPattern = strings.Replace(regExpPattern, param[0], "("+strings.Join(strings.FieldsFunc(req[begin+1:end], func(c rune) bool {
-															return !unicode.IsLetter(c) && !unicode.IsNumber(c)
-														}), "|")+")", 1)
-													}
-												}
-											}
+func regularityBasePath(basePath string, exactly bool, supportEndSlash bool) (rxPath *regexp.Regexp, paramNames []string) {
+	if strings.Index(basePath, "{") < 0 {
+		return
+	}
+	params := rxPathFindParams.FindAllStringSubmatch(basePath, -1)
+	if len(params) < 1 {
+		return
+	}
+	paramNames = make([]string, len(params))
+	regExpPattern := basePath
+	for i, param := range params {
+		if len(param) == 0 {
+			continue
+		}
+		if len(param) > 1 {
+			// Анализ параметра
+			if pos := strings.Index(param[1], ":"); pos > 0 {
+				paramNames[i] = strings.TrimSpace(param[1][0:pos])
+				if req := strings.TrimSpace(param[1][pos+1:]); len(req) > 1 {
+					// Анализ рекомендаций параметра
+					findPattern := true
+					switch req {
+					case "p", "path":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamPath, 1)
+					case "hex":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternHex, 1)
+					case "rid":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamRID, 1)
+					case "uuid":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamUUID, 1)
+					case "i", "int", "integer":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamInteger, 1)
+					case "f", "number", "float":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFloat, 1)
+					case "b", "bool", "boolean":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamBoolean, 1)
+					case "f.e", "file.ext":
+						regExpPattern = strings.Replace(regExpPattern, param[0], patternParamFileExt, 1)
+					default:
+						{
+							findPattern = false
+							if begin, end := strings.Index(req, "("), strings.LastIndex(req, ")"); begin > 0 && end > begin {
+								if t := strings.TrimSpace(req[:begin]); len(t) > 0 {
+									if findPattern = t == "regexp" || t == "enum"; findPattern && len(strings.TrimSpace(req[begin+1:end])) > 0 {
+										switch t {
+										case "rgx", "regexp":
+											regExpPattern = strings.Replace(regExpPattern, param[0], strings.TrimSpace(req[begin:]), 1)
+										case "e", "enum":
+											regExpPattern = strings.Replace(regExpPattern, param[0], "("+strings.Join(strings.FieldsFunc(req[begin+1:end], func(c rune) bool {
+												return !unicode.IsLetter(c) && !unicode.IsNumber(c)
+											}), "|")+")", 1)
 										}
 									}
 								}
-								if findPattern {
-									continue
-								}
 							}
-						} else {
-							paramNames[i] = strings.TrimSpace(param[1])
 						}
-					} else {
-						paramNames[i] = strings.TrimSpace(param[0])
 					}
-					regExpPattern = strings.Replace(regExpPattern, param[0], patternParamString, 1)
+					if findPattern {
+						continue
+					}
 				}
-			}
-			var err error
-			if IsDebug() {
-				fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", regExpPattern, paramNames)
-			}
-			var end string
-			if supportEndSlash {
-				end = "(\\/)?$"
 			} else {
-				end = "$"
+				paramNames[i] = strings.TrimSpace(param[1])
 			}
-			rxPath, err = regexp.Compile("^" + regExpPattern + end)
-			if err != nil {
-				panic(err)
-			}
+		} else {
+			paramNames[i] = strings.TrimSpace(param[0])
 		}
-	} else if IsDebug() {
-		fmt.Println("[DEBUG] Registration", httpMethod, "route:", basePath)
+		regExpPattern = strings.Replace(regExpPattern, param[0], patternParamString, 1)
+	}
+	var (
+		err error
+		end string
+	)
+	if supportEndSlash {
+		end = "(\\/)?"
+	}
+	if exactly {
+		end += "$"
+	}
+	rxPath, err = regexp.Compile("^" + regExpPattern + end)
+	if err != nil {
+		panic(err)
 	}
 	return
 }
@@ -178,18 +178,14 @@ func (r *Router) handle(httpMethod string, relativePath string, handlers []Handl
 	if _, ok := r.routes[httpMethod]; !ok {
 		r.routes[httpMethod] = make([]IRoute, 0)
 	}
-	var (
-		basePath        string
-		rxPath          *regexp.Regexp
-		routeParamNames []string
-	)
-	if len(relativePath) < 1 || relativePath == "/" {
-		rxPath = r.rxPath
-		basePath = r.basePath
-		routeParamNames = r.routeParamNames
-	} else {
-		basePath = joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
-		rxPath, routeParamNames = regularityBasePath(httpMethod, basePath, false)
+	basePath := joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
+	rxPath, routeParamNames := regularityBasePath(basePath, true, true)
+	if IsDebug() {
+		if rxPath != nil {
+			fmt.Println("[DEBUG] Registration", httpMethod, "route regexp:", rxPath.String(), routeParamNames)
+		} else {
+			fmt.Println("[DEBUG] Registration", httpMethod, "plain route:", basePath)
+		}
 	}
 	r.routes[httpMethod] = append(r.routes[httpMethod], &Router{
 		basePath:        basePath,
@@ -219,8 +215,14 @@ func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
 		panic(fmt.Errorf("the group cannot be empty"))
 		return nil
 	}
+	var (
+		rxPath          *regexp.Regexp
+		routeParamNames []string
+	)
 	basePath := joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
-	rxPath, routeParamNames := regularityBasePath("GROUP", basePath, true)
+	if strings.Index(basePath, "{") >= 0 {
+		rxPath, routeParamNames = regularityBasePath(basePath, false, true)
+	}
 	group := &Router{
 		basePath:        basePath,
 		rxPath:          rxPath,

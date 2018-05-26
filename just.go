@@ -214,6 +214,7 @@ func (app *application) LocalDo(req *http.Request) IResponse {
 	defer app.pool.Put(c)
 
 	c.Request, c.IsFrozenRequestBody = req, true
+	c.isLocalRequest = true
 
 	httpMethod, path := c.Request.Method, c.Request.URL.Path
 	if app.checkMethodForHaveBody(httpMethod) && c.Request.Body != nil {

@@ -16,10 +16,11 @@ import (
 // Request Context struct.
 type Context struct {
 	// Private props.
-	app         IApplication      // Application.
-	routeInfo   IRouteInfo        // Current route info.
-	routeParams map[string]string // Current route params.
-	handleIndex int               // Current handler index.
+	app            IApplication      // Application.
+	routeInfo      IRouteInfo        // Current route info.
+	routeParams    map[string]string // Current route params.
+	handleIndex    int               // Current handler index.
+	isLocalRequest bool
 
 	// Public props.
 	Meta                map[string]interface{} // Metadata.
@@ -718,4 +719,8 @@ func (c *Context) MustRequestHeader(key string) string {
 func (c *Context) ResetBodyReaderPosition() error {
 	_, err := topSeekReader(c.Request.Body, true)
 	return err
+}
+
+func (c *Context) IsLocalRequest() bool {
+	return c.isLocalRequest
 }

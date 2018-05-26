@@ -68,6 +68,23 @@ func BenchmarkOneRouteSet(B *testing.B) {
 	runRequest("BenchmarkOneRouteSet", B, app, "GET", "/ping")
 }
 
+func BenchmarkLocalDo(B *testing.B) {
+	app := New()
+	app.GET("/ping", func(c *Context) IResponse {
+		c.Set("key", "value")
+		return &Response{Status: 200}
+	})
+	req, err := http.NewRequest(http.MethodGet, "/ping", nil)
+	if err != nil {
+		panic(err)
+	}
+	B.ReportAllocs()
+	B.ResetTimer()
+	for i := 0; i < B.N; i++ {
+		app.LocalDo(req)
+	}
+}
+
 func BenchmarkOneRouteString(B *testing.B) {
 	app := New()
 	app.GET("/text", func(c *Context) IResponse {

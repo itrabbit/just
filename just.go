@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version      = "v0.1.12"
+	Version      = "v0.1.14"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -32,6 +32,8 @@ type IApplication interface {
 	Translator() ITranslator
 	SerializerManager() ISerializerManager
 	TemplatingManager() ITemplatingManager
+
+	LocalDo(req *http.Request) IResponse
 
 	SetProfiler(p IProfiler) IApplication
 	SetTranslator(t ITranslator) IApplication
@@ -148,7 +150,7 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			if app.profiler != nil {
-				app.profiler.Error(errors.New("Invalid response, recover panic!"))
+				app.profiler.Error(errors.New("invalid response, recover panic"))
 			}
 		}
 	}()
@@ -201,6 +203,33 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 	if app.profiler != nil {
 		app.profiler.Error(http.ErrNotSupported)
 	}
+}
+
+// Локальный вызов запроса внутри движка
+func (app *application) LocalDo(req *http.Request) IResponse {
+	if req == nil {
+		return nil
+	}
+	c := app.pool.Get().(*Context).reset()
+	defer app.pool.Put(c)
+
+	c.Request, c.IsFrozenRequestBody = req, true
+
+	httpMethod, path := c.Request.Method, c.Request.URL.Path
+	if app.checkMethodForHaveBody(httpMethod) && c.Request.Body != nil {
+		if b, _ := ioutil.ReadAll(c.Request.Body); len(b) > 0 {
+			c.Request.Body.Close()
+			c.Request.Body = ioutil.NopCloser(bytes.NewReader(b))
+		}
+	}
+	defer func() {
+		if rvr := recover(); rvr != nil {
+			fmt.Fprintf(os.Stderr, "Panic: %+v\n", rvr)
+			debug.PrintStack()
+		}
+	}()
+	response, _ := app.handleRouter(&app.Router, httpMethod, path, c)
+	return response
 }
 
 func (app *application) handleRouter(router *Router, httpMethod, path string, c *Context) (IResponse, bool) {

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version      = "v0.1.14"
+	Version      = "v0.1.15"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -247,12 +247,14 @@ func (app *application) handleRouter(router *Router, httpMethod, path string, c 
 		}
 		// Поиск следующего роутера
 		if router.groups != nil && len(router.groups) > 0 {
-			for relativePath, r := range router.groups {
-				if strings.Index(relativePath, "{") >= 0 && r.rxPath != nil {
+			for _, r := range router.groups {
+				if strings.Index(r.basePath, "{") >= 0 && r.rxPath != nil {
 					if _, ok := r.CheckPath(path); ok {
 						return app.handleRouter(r, httpMethod, path, c)
 					}
-				} else if strings.Index(path, joinPaths(router.basePath, relativePath)) >= 0 {
+					continue
+				}
+				if strings.Index(path, r.basePath) >= 0 {
 					return app.handleRouter(r, httpMethod, path, c)
 				}
 			}

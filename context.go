@@ -290,7 +290,7 @@ func (c *Context) GetDef(key string, def interface{}) interface{} {
 // Get bool metadata by key.
 func (c *Context) GetBool(key string) (value bool, ok bool) {
 	if c.Meta != nil {
-		if i, ok := c.Meta[key]; ok && i != nil {
+		if i, has := c.Meta[key]; has && i != nil {
 			value, ok = i.(bool)
 		}
 	}
@@ -308,7 +308,7 @@ func (c *Context) GetBoolDef(key string, def bool) bool {
 // Get string metadata by key.
 func (c *Context) GetStr(key string) (value string, ok bool) {
 	if c.Meta != nil {
-		if i, ok := c.Meta[key]; ok && i != nil {
+		if i, has := c.Meta[key]; has && i != nil {
 			value, ok = i.(string)
 		}
 	}
@@ -326,7 +326,7 @@ func (c *Context) GetStrDef(key string, def string) string {
 // Get duration metadata by key.
 func (c *Context) GetDuration(key string) (value time.Duration, ok bool) {
 	if c.Meta != nil {
-		if i, ok := c.Meta[key]; ok && i != nil {
+		if i, has := c.Meta[key]; has && i != nil {
 			value, ok = i.(time.Duration)
 		}
 	}
@@ -344,8 +344,18 @@ func (c *Context) GetDurationDef(key string, def time.Duration) time.Duration {
 // Get integer metadata by key.
 func (c *Context) GetInt(key string) (value int64, ok bool) {
 	if c.Meta != nil {
-		if i, ok := c.Meta[key]; ok && i != nil {
+		if i, has := c.Meta[key]; has && i != nil {
 			value, ok = i.(int64)
+		}
+	}
+	return
+}
+
+// Get unsigned integer metadata by key.
+func (c *Context) GetUint(key string) (value uint64, ok bool) {
+	if c.Meta != nil {
+		if i, has := c.Meta[key]; has && i != nil {
+			value, ok = i.(uint64)
 		}
 	}
 	return
@@ -359,10 +369,18 @@ func (c *Context) GetIntDef(key string, def int64) int64 {
 	return def
 }
 
+// Get unsigned integer metadata by key with default value.
+func (c *Context) GetUintDef(key string, def uint64) uint64 {
+	if value, ok := c.GetUint(key); ok {
+		return value
+	}
+	return def
+}
+
 // Get integer metadata by key.
 func (c *Context) GetFloat(key string) (value float64, ok bool) {
 	if c.Meta != nil {
-		if i, ok := c.Meta[key]; ok && i != nil {
+		if i, has := c.Meta[key]; has && i != nil {
 			value, ok = i.(float64)
 		}
 	}

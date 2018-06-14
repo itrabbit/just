@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version      = "v0.1.15"
+	Version      = "v0.1.16"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 

@@ -142,6 +142,9 @@ func parseFieldTags(encTagName string, field *reflect.StructField, groups ...str
 func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 	// TODO: Оптимизировать в будущем
 	val := reflect.Indirect(reflect.ValueOf(v))
+	if val.IsNil() || !val.IsValid() {
+		return v
+	}
 	kind := val.Type().Kind()
 	if kind == reflect.Array || kind == reflect.Slice {
 		elemKind := val.Type().Elem().Kind()

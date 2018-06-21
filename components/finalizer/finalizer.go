@@ -149,7 +149,8 @@ func Finalize(encTagName string, v interface{}, groups ...string) interface{} {
 			elemKind == reflect.Struct ||
 			elemKind == reflect.Slice ||
 			elemKind == reflect.Array ||
-			elemKind == reflect.Map {
+			elemKind == reflect.Map ||
+			elemKind == reflect.Ptr {
 			list := make([]interface{}, val.Len(), val.Len())
 			for i := 0; i < val.Len(); i++ {
 				if elem := val.Index(i); elem.IsValid() {

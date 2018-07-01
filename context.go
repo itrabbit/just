@@ -13,6 +13,14 @@ import (
 	"time"
 )
 
+// Errors
+var (
+	ErrEmptyRequest          = errors.New("empty request")
+	ErrEmptyRequestBody      = errors.New("empty request body")
+	ErrNotFoundSerializer    = errors.New("not find serializer for content type in your request")
+	ErrNotFoundUrlSerializer = errors.New("not find serializer for url query (application/x-www-form-urlencoded)")
+)
+
 // Request Context struct.
 type Context struct {
 	// Private props.
@@ -127,21 +135,21 @@ func (c *Context) S(names ...string) ISerializer {
 // DeSerializing body or query to object
 func (c *Context) Bind(ptr interface{}) error {
 	if c.Request == nil {
-		return errors.New("Empty request")
+		return ErrEmptyRequest
 	}
 	if (c.Request.Method == "GET" || c.Request.Method == "DELETE") && c.Request.URL != nil {
 		s := c.app.SerializerManager().Serializer("application/x-www-form-urlencoded", true)
 		if s == nil {
-			return errors.New("Not find Serializer for url query (application/x-www-form-urlencoded)")
+			return ErrNotFoundUrlSerializer
 		}
 		return s.Deserialize([]byte(c.Request.URL.RawQuery), ptr)
 	}
 	if c.Request.Body == nil {
-		return errors.New("Empty request body")
+		return ErrEmptyRequestBody
 	}
 	s := c.app.SerializerManager().Serializer(c.ContentType(), true)
 	if s == nil {
-		return errors.New("Not find Serializer for " + c.ContentType())
+		return ErrNotFoundSerializer
 	}
 	b, err := ioutil.ReadAll(c.Request.Body)
 	defer c.ResetBodyReaderPosition()
@@ -684,7 +692,7 @@ func (c *Context) UserAgent() string {
 
 // Get the Content-Type header of the request.
 func (c *Context) ContentType() string {
-	contentType := c.MustRequestHeader("Content-Type")
+	contentType := c.MustRequestHeader(ContentTypeHeaderKey)
 	for i, ch := range contentType {
 		if ch == ' ' || ch == ';' {
 			contentType = strings.TrimSpace(contentType[:i])

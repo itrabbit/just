@@ -162,7 +162,7 @@ func Validation(obj interface{}) []error {
 								case reflect.String:
 									err = validationString(val.Field(i).String(), instruction)
 								default:
-									err = errors.New("Unsupported validator")
+									err = errors.New("unsupported validator")
 								}
 								if err != nil {
 									if result == nil {

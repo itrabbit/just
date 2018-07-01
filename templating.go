@@ -7,6 +7,11 @@ import (
 	"sync"
 )
 
+// Errors
+var (
+	ErrEmptyTemplates = errors.New("have hot templates")
+)
+
 // Interface for rendering templates.
 type IRenderer interface {
 	DefaultContentType(withCharset bool) string
@@ -134,7 +139,7 @@ func (r *HTMLRenderer) RemoveFunc(name string) IRenderer {
 // Render HTML to bytes.
 func (r *HTMLRenderer) Render(name string, data interface{}) ([]byte, error) {
 	if r.template == nil {
-		return nil, errors.New("Have hot templates")
+		return nil, ErrEmptyTemplates
 	}
 	var buffer bytes.Buffer
 	if err := r.template.ExecuteTemplate(&buffer, name, data); err != nil {
@@ -150,7 +155,7 @@ func (r *HTMLRenderer) Response(status int, name string, data interface{}) IResp
 			Status: status,
 			Bytes:  b,
 			Headers: map[string]string{
-				"Content-Type": r.DefaultContentType(true),
+				ContentTypeHeaderKey: r.DefaultContentType(true),
 			},
 		}
 	}

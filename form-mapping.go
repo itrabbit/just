@@ -9,10 +9,16 @@ import (
 	"time"
 )
 
+var (
+	ErrUnknownType         = errors.New("unknown type")
+	ErrBlankTimeFormat     = errors.New("blank time format")
+	ErrOnlyStructUrlEncode = errors.New("array and slice by root element not supported, only structure")
+)
+
 func marshalUrlValues(ptr interface{}) ([]byte, error) {
 	t, v := reflect.TypeOf(ptr).Elem(), reflect.ValueOf(ptr).Elem()
 	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
-		return nil, errors.New("Array and slice by root element not supported, only structure!")
+		return nil, ErrOnlyStructUrlEncode
 	}
 	values := make(url.Values)
 	for i := 0; i < t.NumField(); i++ {
@@ -147,7 +153,7 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 	case reflect.String:
 		structField.SetString(val)
 	default:
-		return errors.New("Unknown type")
+		return ErrUnknownType
 	}
 	return nil
 }
@@ -199,7 +205,7 @@ func setFloatField(val string, bitSize int, field reflect.Value) error {
 func setTimeField(val string, structField reflect.StructField, value reflect.Value) error {
 	timeFormat := structField.Tag.Get("time_format")
 	if timeFormat == "" {
-		return errors.New("Blank time format")
+		return ErrBlankTimeFormat
 	}
 	if val == "" {
 		value.Set(reflect.ValueOf(time.Time{}))

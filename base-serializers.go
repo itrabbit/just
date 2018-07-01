@@ -9,6 +9,10 @@ import (
 	"net/url"
 )
 
+var (
+	ErrSerializeOperationsDisabled = errors.New("serialize operations disabled")
+)
+
 // Base JSON serializer.
 type JsonSerializer struct {
 	Ch string // Charset for generate Content-Type header.
@@ -129,7 +133,7 @@ func (s FormSerializer) DefaultContentType(withCharset bool) string {
 
 func (s FormSerializer) Serialize(v interface{}) ([]byte, error) {
 	if s.OnlyDeserialize {
-		return nil, errors.New("Serialize operations disabled")
+		return nil, ErrSerializeOperationsDisabled
 	}
 	if input, ok := v.(ISerializeInput); ok {
 		v = input.Data()

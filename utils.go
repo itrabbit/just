@@ -11,6 +11,12 @@ import (
 	"strings"
 )
 
+// Errors
+var (
+	ErrEmptyReader       = errors.New("reader is empty")
+	ErrUnsupportedReader = errors.New("reader is not supported")
+)
+
 func topSeekReader(reader io.Reader, nopDetect bool) (int64, error) {
 	if reader != nil {
 		if nopDetect {
@@ -29,9 +35,9 @@ func topSeekReader(reader io.Reader, nopDetect bool) (int64, error) {
 		} else if f, ok := reader.(*os.File); ok {
 			return f.Seek(0, io.SeekStart)
 		}
-		return -1, errors.New("Reader is not supported")
+		return -1, ErrUnsupportedReader
 	}
-	return -1, errors.New("Reader is empty")
+	return -1, ErrEmptyReader
 }
 
 func joinPaths(a string, b string) string {

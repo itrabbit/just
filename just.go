@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version      = "v0.1.17"
+	Version      = "v0.1.18"
 	DebugEnvName = "JUST_DEBUG_MODE"
 )
 
@@ -22,6 +22,12 @@ const (
 var (
 	debugMutex = sync.RWMutex{}
 	debugMode  = true
+)
+
+// Errors
+var (
+	ErrInvalidContext         = errors.New("invalid context")
+	ErrRecoverInvalidResponse = errors.New("invalid response, recover panic")
 )
 
 // JUST Application interface.
@@ -119,7 +125,7 @@ func (app *application) checkMethodForHaveBody(method string) bool {
 func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 	if !c.IsValid() {
 		if app.profiler != nil {
-			app.profiler.Warning(errors.New("Invalid context"))
+			app.profiler.Warning(ErrInvalidContext)
 		}
 		return
 	}
@@ -150,7 +156,7 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			if app.profiler != nil {
-				app.profiler.Error(errors.New("invalid response, recover panic"))
+				app.profiler.Error(ErrRecoverInvalidResponse)
 			}
 		}
 	}()
@@ -179,14 +185,13 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 		if streamFunc, ok := response.GetStreamHandler(); ok {
 			streamFunc(w, c.Request)
 		} else {
-			if headers := response.GetHeaders(); len(headers) > 0 {
+			if response.HasHeaders() {
 				// Обработка заголовков
-				for key, value := range headers {
-					if key == "_StrongRedirect" {
+				for key, value := range response.GetHeaders() {
+					if key == StrongRedirectHeaderKey {
 						http.Redirect(w, c.Request, value, response.GetStatus())
 						return
-					}
-					if key == "_FilePath" {
+					} else if key == ServeFileHeaderKey {
 						http.ServeFile(w, c.Request, value)
 						return
 					}

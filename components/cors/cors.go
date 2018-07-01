@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
+
 	"github.com/itrabbit/just"
 )
 
@@ -94,6 +96,8 @@ func Middleware(options Options) just.HandlerFunc {
 				if len(options.ExposeHeaders) > 0 {
 					headers["Access-Control-Expose-Headers"] = strings.Join(options.ExposeHeaders, ",")
 				}
+			} else {
+				fmt.Println("[WARNING][CORS] Can't change response for", c.Request.URL.String())
 			}
 		}
 		return res

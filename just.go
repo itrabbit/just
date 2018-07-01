@@ -187,15 +187,23 @@ func (app *application) handleHttpRequest(w http.ResponseWriter, c *Context) {
 		} else {
 			if response.HasHeaders() {
 				// Обработка заголовков
-				for key, value := range response.GetHeaders() {
+				headers, hasRedirect, hasServeFiles := response.GetHeaders(), false, false
+				for key, value := range headers {
 					if key == StrongRedirectHeaderKey {
-						http.Redirect(w, c.Request, value, response.GetStatus())
-						return
+						hasRedirect = true
+						continue
 					} else if key == ServeFileHeaderKey {
-						http.ServeFile(w, c.Request, value)
-						return
+						hasServeFiles = true
+						continue
 					}
 					w.Header().Set(key, value)
+				}
+				if hasRedirect {
+					http.Redirect(w, c.Request, headers[StrongRedirectHeaderKey], response.GetStatus())
+					return
+				} else if hasServeFiles {
+					http.ServeFile(w, c.Request, headers[ServeFileHeaderKey])
+					return
 				}
 			}
 			w.WriteHeader(response.GetStatus())

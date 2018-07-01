@@ -115,7 +115,7 @@ func (c *Context) Serializer(names ...string) ISerializer {
 					return m.Serializer(def, false)
 				}
 			}
-			if strings.Index(n, "/") > 0 {
+			if strings.IndexByte(n, '/') > 0 {
 				if s := m.Serializer(n, true); s != nil {
 					return s
 				}

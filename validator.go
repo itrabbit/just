@@ -36,7 +36,7 @@ func (e *ValidationError) Error() string {
 }
 
 func parseInstruction(instruction string) (string, string) {
-	if start := strings.Index(instruction, "("); start > 0 {
+	if start := strings.IndexByte(instruction, '('); start > 0 {
 		if name := strings.TrimSpace(instruction[:start]); len(name) > 0 {
 			return name, strings.TrimSpace(strings.Trim(instruction[start:], "()"))
 		}

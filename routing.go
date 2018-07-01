@@ -86,7 +86,7 @@ func connectHandlersByRouter(r *Router, handlers []HandlerFunc) []HandlerFunc {
 }
 
 func regularityBasePath(basePath string, exactly bool, supportEndSlash bool) (rxPath *regexp.Regexp, paramNames []string) {
-	if strings.Index(basePath, "{") < 0 {
+	if strings.IndexByte(basePath, '{') < 0 {
 		return
 	}
 	params := rxPathFindParams.FindAllStringSubmatch(basePath, -1)
@@ -101,7 +101,7 @@ func regularityBasePath(basePath string, exactly bool, supportEndSlash bool) (rx
 		}
 		if len(param) > 1 {
 			// Анализ параметра
-			if pos := strings.Index(param[1], ":"); pos > 0 {
+			if pos := strings.IndexByte(param[1], ':'); pos > 0 {
 				paramNames[i] = strings.TrimSpace(param[1][0:pos])
 				if req := strings.TrimSpace(param[1][pos+1:]); len(req) > 1 {
 					// Анализ рекомендаций параметра
@@ -126,7 +126,7 @@ func regularityBasePath(basePath string, exactly bool, supportEndSlash bool) (rx
 					default:
 						{
 							findPattern = false
-							if begin, end := strings.Index(req, "("), strings.LastIndex(req, ")"); begin > 0 && end > begin {
+							if begin, end := strings.IndexByte(req, '('), strings.LastIndexByte(req, ')'); begin > 0 && end > begin {
 								if t := strings.TrimSpace(req[:begin]); len(t) > 0 {
 									if findPattern = t == "regexp" || t == "enum"; findPattern && len(strings.TrimSpace(req[begin+1:end])) > 0 {
 										switch t {
@@ -220,7 +220,7 @@ func (r *Router) Group(relativePath string, handlers ...HandlerFunc) IRouter {
 		routeParamNames []string
 	)
 	basePath := joinPaths(r.basePath, strings.TrimRight(relativePath, "/"))
-	if strings.Index(basePath, "{") >= 0 {
+	if strings.IndexByte(basePath, '{') >= 0 {
 		rxPath, routeParamNames = regularityBasePath(basePath, false, true)
 	}
 	group := &Router{

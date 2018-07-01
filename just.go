@@ -261,7 +261,7 @@ func (app *application) handleRouter(router *Router, httpMethod, path string, c 
 		// Поиск следующего роутера
 		if router.groups != nil && len(router.groups) > 0 {
 			for _, r := range router.groups {
-				if strings.Index(r.basePath, "{") >= 0 && r.rxPath != nil {
+				if strings.LastIndexByte(r.basePath, '}') >= 0 && r.rxPath != nil {
 					if _, ok := r.CheckPath(path); ok {
 						return app.handleRouter(r, httpMethod, path, c)
 					}

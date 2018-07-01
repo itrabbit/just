@@ -142,7 +142,7 @@ func (s FormSerializer) Serialize(v interface{}) ([]byte, error) {
 }
 
 func (FormSerializer) Deserialize(data []byte, v interface{}) error {
-	if len(data) <= defaultMaxUrlSize && bytes.Index(data, []byte("\n")) < 0 {
+	if len(data) <= defaultMaxUrlSize && bytes.IndexByte(data, '\n') < 0 {
 		values, err := url.ParseQuery(string(data))
 		if err != nil {
 			return err
